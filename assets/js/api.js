@@ -1,11 +1,24 @@
 // Генерация. Если в config.js задан apiUrl — отправляем эскиз в бэкенд (Cloudflare Worker → OpenAI).
 // Иначе — демо-режим: эскиз «подкрашивается» фильтрами прямо в браузере, чтобы был виден весь путь.
 import { L } from './i18n.js';
+import { token } from './store.js';
 
 export const apiUrl = () => ((window.MAESTRO_CONFIG && window.MAESTRO_CONFIG.apiUrl) || '').replace(/\/+$/, '');
 export const isDemo = () => !apiUrl();
 
 const toBlob = (canvas, type = 'image/png', q) => new Promise((ok) => canvas.toBlob(ok, type, q));
+
+// баланс: сколько осталось бесплатных и купленных генераций
+export let lastBalance = null;
+export async function getBalance() {
+  if (isDemo()) return null;
+  try { lastBalance = await (await fetch(`${apiUrl()}/balance?token=${encodeURIComponent(token())}`)).json(); } catch {}
+  return lastBalance;
+}
+export async function getPacks() {
+  if (isDemo()) return { wallet: '', packs: [] };
+  return (await fetch(`${apiUrl()}/packs`)).json();
+}
 
 export class ApiError extends Error { constructor(code, msg) { super(msg || code); this.code = code; } }
 
@@ -25,6 +38,7 @@ export async function generate(o) {
   const fd = new FormData();
   fd.append('image', await toBlob(canvas), 'sketch.png');
   fd.append('size', size);
+  fd.append('token', token());
   fd.append('workId', o.work.id);
   fd.append('title', L(o.work.title));
   fd.append('artist', o.work.artist.en);
@@ -34,10 +48,12 @@ export async function generate(o) {
   fd.append('closeness', String(o.closeness));
   fd.append('description', (o.description || '').slice(0, 300));
   const r = await fetch(apiUrl() + '/generate', { method: 'POST', body: fd });
+  if (r.status === 402) throw new ApiError('no_credits');
   if (r.status === 429) throw new ApiError('limit');
   if (r.status === 400) { const e = await r.json().catch(() => ({})); if (e.error === 'moderation') throw new ApiError('moderation'); }
   if (!r.ok) throw new ApiError('server', await r.text().catch(() => ''));
   const j = await r.json();
+  if (j.balance) lastBalance = j.balance;
   const bin = atob(j.image);
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);

@@ -40,6 +40,14 @@ worker/worker.js               бэкенд для Cloudflare
 2. Для моделей gpt-image OpenAI может попросить подтвердить организацию (**Settings → Organization → Verify**).
 3. **API keys → Create new secret key**. Ключ никому не пересылайте — он понадобится только на шаге 3.
 
+## Генерации и оплата
+
+- Каждому человеку 3 бесплатные генерации за всё время (считаются и по адресу, и по коду браузера), дальше — пакеты на странице `#/buy`.
+- Пакеты и цены — в `worker/worker.js` (`PACKS`): 3 за 449 ₽, 10 за 1 490 ₽, 30 за 4 290 ₽. Себестоимость генерации ≈ 13 ₽ (≈6 500 входных и 1 900 выходных токенов gpt-image-1.5, medium), после комиссии ЮMoney 3% и налога 4% — в 10 раз больше.
+- Оплата: кошелёк ЮMoney физлица, форма Quickpay. ЮMoney шлёт уведомление на `https://maestro-api.maestro-art.workers.dev/pay/yoomoney`, бэкенд проверяет подпись (HMAC-SHA256) и начисляет генерации на код покупателя из метки платежа.
+- Подключение: номер кошелька — в `YOOMONEY_WALLET` (wrangler.toml), секрет уведомлений — `npx wrangler@4 secret put YOOMONEY_SECRET`, адрес уведомлений — в yoomoney.ru/transfer/myservices/http-notification.
+- Себестоимость по факту видна в логах: `npx wrangler@4 tail` → строки `usage`.
+
 ## Обновить бэкенд из командной строки
 
 Настройки — в `worker/wrangler.toml` (адрес сайта, модель, качество, лимиты, KV `LIMITS`).

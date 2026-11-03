@@ -7,7 +7,7 @@ import { WORKS, FILTERS } from './catalog.js';
 import { t, L, getLang, setLang } from './i18n.js';
 import { createMaestro } from './hero.js';
 import { Editor, blobImage } from './editor.js';
-import { generate, isDemo, ApiError } from './api.js';
+import { generate, isDemo, ApiError, getBalance, getPacks } from './api.js';
 import * as store from './store.js';
 import { roughen } from './rough.js';
 
@@ -49,7 +49,7 @@ function header(active, back = null) {
   const first = back ? `<a href="${back.href}" class="on" ${back.attrs || ''}>${esc(back.label)}</a>` : `<a href="#/catalog" class="${active === 'catalog' ? 'on' : ''}">${t('nav.catalog')}</a>`;
   return `<header class="top ${active === 'catalog' ? 'wide' : ''}">
     <a class="logo" href="#/">maestro</a>
-    <nav>${first}<a href="#/favs" class="${active === 'favs' ? 'on' : ''}">${t('nav.favs')}</a><a href="#/my" class="${active === 'my' ? 'on' : ''}">${t('nav.my')}</a></nav>
+    <nav>${first}<a href="#/favs" class="${active === 'favs' ? 'on' : ''}">${t('nav.favs')}</a><a href="#/my" class="${active === 'my' ? 'on' : ''}">${t('nav.my')}</a><a href="#/buy" class="${active === 'buy' ? 'on' : ''}">${t('nav.buy')}</a></nav>
     <div class="top-right">${langBtn()}${btn(t('nav.login'), 'outline', 'S', 'data-act="soon"')}</div>
   </header>`;
 }
@@ -184,6 +184,53 @@ function viewFavs() {
   app.querySelectorAll('[data-unfav]').forEach((b) => b.onclick = () => { store.toggleFav(b.dataset.unfav); viewFavs(); });
 }
 
+// ---------- покупка генераций ----------
+async function viewBuy() {
+  const paidBack = location.hash.includes('paid');
+  app.innerHTML = `${header('buy')}
+  <main class="page buy">
+    <div class="intro tight"><h1 class="h1">${t('buy.title')}</h1><p class="lead muted">${t('buy.lead')}</p></div>
+    <p class="balance m16" id="bal">…</p>
+    <section class="packs" id="packs"></section>
+    <p class="small muted pay-note">${t('buy.note')}</p>
+    <section class="code-box">
+      <h3 class="h3">${t('buy.codeTitle')}</h3>
+      <p class="body18">${t('buy.codeText')}</p>
+      <div class="code-row"><code id="code">${esc(store.token())}</code><button class="link" id="copy-code">${t('buy.copy')}</button></div>
+      <div class="code-row"><span class="field small-field" data-rough="3 var(--ink) var(--paper) 16"><input id="code-in" placeholder="${esc(t('buy.codePh'))}" autocomplete="off"></span>${btn(t('buy.restore'), 'outline', 'S', 'id="restore"')}</div>
+    </section>
+  </main>`;
+  const showBal = (b) => { $('#bal').textContent = b ? t('buy.balance', b.free, b.credits) : t('buy.offline'); };
+  showBal(await getBalance());
+  const { wallet, packs } = await getPacks().catch(() => ({ wallet: '', packs: [] }));
+  const ru = (n) => n.toLocaleString('ru-RU');
+  $('#packs').innerHTML = packs.length ? packs.map((p) => `
+    <form class="pack" data-rough="4 var(--ink) var(--paper) 28" method="POST" action="https://yoomoney.ru/quickpay/confirm">
+      <span class="pack-n">${p.gens}</span><span class="m16">${t('buy.gens', p.gens)}</span>
+      <span class="pack-price">${ru(p.price)} ₽</span><span class="small muted">${t('buy.per', ru(Math.round(p.price / p.gens)))}</span>
+      <input type="hidden" name="receiver" value="${esc(wallet)}"><input type="hidden" name="quickpay-form" value="button">
+      <input type="hidden" name="sum" value="${p.price}"><input type="hidden" name="label" value="${esc(store.token())}:${p.id}">
+      <input type="hidden" name="paymentType" value="AC"><input type="hidden" name="successURL" value="${esc(location.origin + location.pathname + '#/buy/paid')}">
+      ${wallet ? btn(t('buy.pay'), 'solid', 'S', 'type="submit"') : `<span class="small muted">${t('buy.soon')}</span>`}
+    </form>`).join('') : `<p class="body18">${t('buy.offline')}</p>`;
+  $('#copy-code').onclick = async () => { try { await navigator.clipboard.writeText(store.token()); toast(t('buy.copied')); } catch {} };
+  $('#restore').onclick = async () => {
+    const v = $('#code-in').value.trim();
+    if (!/^[a-z0-9-]{16,64}$/i.test(v)) { toast(t('buy.badCode')); return; }
+    store.setToken(v); $('#code').textContent = store.token(); showBal(await getBalance()); toast(t('buy.restored'));
+  };
+  // вернулись после оплаты: уведомление ЮMoney приходит за секунды — обновляем баланс, пока не придёт
+  if (paidBack) {
+    toast(t('buy.waiting'));
+    const before = (await getBalance()) || { credits: 0 };
+    for (let i = 0; i < 20 && location.hash.startsWith('#/buy'); i++) {
+      await new Promise((r) => setTimeout(r, 3000));
+      const b = await getBalance(); showBal(b);
+      if (b && b.credits > before.credits) { toast(t('buy.thanks')); break; }
+    }
+  }
+}
+
 // ---------- карточка работы ----------
 function viewWork(id) {
   const w = byId(id); if (!w) { location.hash = '#/catalog'; return; }
@@ -253,6 +300,7 @@ async function viewDraw(id) {
       <label class="desc"><span>${t('ai.describe')}</span><span class="field" data-rough="3 var(--ink) var(--paper) 16"><textarea id="desc" maxlength="300" placeholder="${esc(t('ai.placeholder'))}"></textarea></span></label>
       <div class="grow"></div>
       ${btn(t('ai.go'), 'solid', 'L', 'id="go"')}
+      <p class="credits" id="credits"></p>
     </aside>
   </div>`;
 
@@ -342,6 +390,12 @@ async function viewDraw(id) {
   const styleBox = $('#style'), goBtn = $('#go');
   const syncGo = () => { goBtn.querySelector('span').textContent = styleBox.checked ? t('ai.go') : t('ai.noStyle'); $('.slider').classList.toggle('dim', !styleBox.checked); };
   styleBox.onchange = syncGo; syncGo();
+  // сколько генераций осталось — под кнопкой
+  const showCredits = (b) => {
+    const el = $('#credits'); if (!el || !b) return;
+    el.innerHTML = b.free > 0 ? esc(t('cr.free', b.free)) : b.credits > 0 ? esc(t('cr.paid', b.credits)) : `${esc(t('cr.none'))} <a class="link" href="#/buy">${t('cr.buy')}</a>`;
+  };
+  getBalance().then(showCredits);
 
   goBtn.onclick = async () => {
     if (ed.isEmpty()) { toast(t('ai.empty')); return; }
@@ -357,8 +411,10 @@ async function viewDraw(id) {
     try {
       const result = await runGeneration(host, ed, () => generate(base));
       S.last = { ...base, result, styled: true };
+      getBalance();
       location.hash = '#/result';
     } catch (err) {
+      if (err instanceof ApiError && err.code === 'no_credits') { toast(t('cr.none')); location.hash = '#/buy'; return; }
       toast(err instanceof ApiError && err.code === 'limit' ? t('ai.limit') : err instanceof ApiError && err.code === 'moderation' ? t('ai.moderation') : t('ai.error'));
       console.error(err);
     } finally { goBtn.disabled = false; }
@@ -505,6 +561,7 @@ async function route() {
   if (page === 'result') return viewResult(arg);
   if (page === 'my') return viewMy();
   if (page === 'favs') return viewFavs();
+  if (page === 'buy') return viewBuy();
   location.hash = '#/';
 }
 // рваные обводки у всего, что появилось на странице

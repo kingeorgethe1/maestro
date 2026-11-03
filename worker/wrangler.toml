@@ -7,7 +7,9 @@ compatibility_date = "2025-06-01"
 ALLOWED_ORIGINS = "https://kingeorgethe1.github.io"
 MODEL = "gpt-image-1.5"
 QUALITY = "medium"
-LIMIT_PER_IP = "10"
+FREE_LIMIT = "3"
+# номер кошелька ЮMoney для формы оплаты (секрет уведомлений — npx wrangler secret put YOOMONEY_SECRET)
+YOOMONEY_WALLET = ""
 LIMIT_TOTAL = "200"
 
 # KV для дневных лимитов (создано: npx wrangler kv namespace create LIMITS)

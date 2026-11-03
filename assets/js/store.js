@@ -33,3 +33,12 @@ export const deleteDraft = (workId) => tx('drafts', 'readwrite', (s) => s.delete
 const FAV = 'maestro.favs';
 export const favs = () => { try { return JSON.parse(localStorage.getItem(FAV) || '[]'); } catch { return []; } };
 export const toggleFav = (id) => { const f = new Set(favs()); f.has(id) ? f.delete(id) : f.add(id); try { localStorage.setItem(FAV, JSON.stringify([...f])); } catch {} return f.has(id); };
+
+// код покупателя: к нему на сервере привязаны бесплатные и купленные генерации (можно перенести на другое устройство)
+const TOKEN = 'maestro.token';
+export function token() {
+  let t = null; try { t = localStorage.getItem(TOKEN); } catch {}
+  if (!t) { t = (crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, '0')).join('')); try { localStorage.setItem(TOKEN, t); } catch {} }
+  return t;
+}
+export function setToken(t) { try { localStorage.setItem(TOKEN, t.trim().toLowerCase()); } catch {} }

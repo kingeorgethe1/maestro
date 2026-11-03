@@ -247,6 +247,24 @@ textarea:focus { outline: none; }
 .res-bar { justify-content: center; gap: 20px; }
 .btn.done, .btn.done:disabled { opacity: 1; cursor: default; }
 
+/* ---------- Покупка генераций ---------- */
+.credits { font: 400 14px/normal var(--body); color: var(--muted); text-align: center; margin-top: -8px; }
+.credits .link { font-size: 14px; }
+.buy .balance { margin-top: 32px; }
+.packs { display: grid; grid-template-columns: repeat(3, minmax(0, 300px)); gap: 40px; margin-top: 28px; }
+.pack { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 32px 24px 28px; text-align: center; margin: 0; }
+.pack-n { font: 400 72px/1 var(--hand); }
+.pack-price { font: 700 32px/normal var(--body); margin-top: 14px; }
+.pack .btn { margin-top: 18px; }
+.pay-note { margin-top: 24px; }
+.code-box { margin-top: 48px; display: flex; flex-direction: column; gap: 12px; max-width: 760px; }
+.code-row { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.code-row code { font: 500 16px/normal ui-monospace, Menlo, monospace; background: var(--field); padding: 10px 14px; border-radius: 12px; }
+.small-field { display: inline-flex; width: 360px; max-width: 100%; }
+.small-field input { width: 100%; border: 0; background: transparent; font: 500 16px/normal var(--body); padding: 12px 14px; border-radius: 16px; }
+.small-field input:focus { outline: none; }
+@media (max-width: 1000px) { .packs { grid-template-columns: 1fr; max-width: 360px; } }
+
 /* ---------- Мои работы ---------- */
 .my .grid { margin-top: 64px; gap: 56px 40px; }
 .my .card { gap: 12px; }
