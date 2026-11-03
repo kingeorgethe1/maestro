@@ -93,6 +93,13 @@
     "license": "Public domain",
     "credit": "http://www.philamuseum.org/collections/permanent/52013.html?mulR=20082"
   },
+  "28": {
+    "source": "artuk",
+    "file": "Head of an Unknown Young Woman (K1681) — Sir Thomas Lawrence",
+    "page": "https://artuk.org/discover/artworks/search/keyword:K1681",
+    "license": "© Bristol Museums, Galleries & Archives (photo via Art UK, non-commercial use)",
+    "credit": "Bristol Museums, Galleries & Archives / Art UK"
+  },
   "29": {
     "file": "File:George Romney by George Romney.jpg",
     "page": "https://commons.wikimedia.org/wiki/File:George_Romney_by_George_Romney.jpg",
@@ -146,12 +153,5 @@
     "page": "https://commons.wikimedia.org/wiki/File:NHURDMAG.png",
     "license": "CC BY-SA 4.0",
     "credit": "Own work"
-  },
-  "28": {
-    "source": "artuk",
-    "file": "Head of an Unknown Young Woman (K1681) — Sir Thomas Lawrence",
-    "page": "https://artuk.org/discover/artworks/search/keyword:K1681",
-    "license": "© Bristol Museums, Galleries & Archives (photo via Art UK, non-commercial use)",
-    "credit": "Bristol Museums, Galleries & Archives / Art UK"
   }
 }
