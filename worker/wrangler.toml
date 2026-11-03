@@ -4,7 +4,7 @@ main = "worker.js"
 compatibility_date = "2025-06-01"
 
 [vars]
-ALLOWED_ORIGINS = "https://ВАШ-ЛОГИН.github.io"
+ALLOWED_ORIGINS = "https://kingeorgethe1.github.io"
 MODEL = "gpt-image-1.5"
 QUALITY = "medium"
 LIMIT_PER_IP = "10"

@@ -359,7 +359,7 @@ async function viewDraw(id) {
       S.last = { ...base, result, styled: true };
       location.hash = '#/result';
     } catch (err) {
-      toast(err instanceof ApiError && err.code === 'limit' ? t('ai.limit') : t('ai.error'));
+      toast(err instanceof ApiError && err.code === 'limit' ? t('ai.limit') : err instanceof ApiError && err.code === 'moderation' ? t('ai.moderation') : t('ai.error'));
       console.error(err);
     } finally { goBtn.disabled = false; }
   };

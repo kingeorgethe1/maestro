@@ -21,8 +21,10 @@ export class ApiError extends Error { constructor(code, msg) { super(msg || code
  */
 export async function generate(o) {
   if (isDemo()) return mock(o);
+  const { canvas, size, box } = fitForModel(o.composite);
   const fd = new FormData();
-  fd.append('image', await toBlob(o.composite), 'sketch.png');
+  fd.append('image', await toBlob(canvas), 'sketch.png');
+  fd.append('size', size);
   fd.append('workId', o.work.id);
   fd.append('title', L(o.work.title));
   fd.append('artist', o.work.artist.en);
@@ -33,12 +35,35 @@ export async function generate(o) {
   fd.append('description', (o.description || '').slice(0, 300));
   const r = await fetch(apiUrl() + '/generate', { method: 'POST', body: fd });
   if (r.status === 429) throw new ApiError('limit');
+  if (r.status === 400) { const e = await r.json().catch(() => ({})); if (e.error === 'moderation') throw new ApiError('moderation'); }
   if (!r.ok) throw new ApiError('server', await r.text().catch(() => ''));
   const j = await r.json();
   const bin = atob(j.image);
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return new Blob([bytes], { type: j.mime || 'image/png' });
+  const out = await createImageBitmap(new Blob([bytes], { type: j.mime || 'image/jpeg' }));
+  return backToComposite(out, box, o.composite);
+}
+
+// Модель рисует только 1536×1024, 1024×1536 или 1024×1024. Эскиз вписываем в ближайший формат по центру
+// (поля — цветом холста), а ответ потом обрезаем обратно — так «было» и «стало» совпадают до пикселя.
+const SIZES = [[1536, 1024], [1024, 1536], [1024, 1024]];
+function fitForModel(src) {
+  const ar = src.width / src.height;
+  const [W, H] = SIZES.reduce((best, s) => (Math.abs(Math.log(s[0] / s[1] / ar)) < Math.abs(Math.log(best[0] / best[1] / ar)) ? s : best));
+  const k = Math.min(W / src.width, H / src.height), w = Math.round(src.width * k), h = Math.round(src.height * k);
+  const box = { x: Math.round((W - w) / 2), y: Math.round((H - h) / 2), w, h, W, H };
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d'); x.fillStyle = '#F4F1EA'; x.fillRect(0, 0, W, H);
+  x.imageSmoothingQuality = 'high'; x.drawImage(src, box.x, box.y, w, h);
+  return { canvas: c, size: `${W}x${H}`, box };
+}
+function backToComposite(img, box, ref) {
+  const sx = img.width / box.W, sy = img.height / box.H; // на случай, если модель вернула другой размер
+  const c = document.createElement('canvas'); c.width = ref.width; c.height = ref.height;
+  const x = c.getContext('2d'); x.imageSmoothingQuality = 'high';
+  x.drawImage(img, box.x * sx, box.y * sy, box.w * sx, box.h * sy, 0, 0, ref.width, ref.height);
+  return toBlob(c, 'image/png');
 }
 
 // Демо (ИИ не подключён): только имитация «стало» — картина, слегка переписанная фильтром.

@@ -1,6 +1,7 @@
 // MAESTRO API — Cloudflare Worker. Хранит ключ OpenAI в секрете и принимает запросы только с сайта.
 // POST /generate (multipart): image (PNG эскиза поверх картины), workId, title, artist, date, technique,
-//                              movement, closeness (0..1), description (до 300 символов)
+//                              movement, closeness (0..1), description (до 300 символов),
+//                              size (1024x1024 | 1536x1024 | 1024x1536 — сайт уже подогнал эскиз под эти пропорции)
 // Ответ: { image: <base64>, mime: 'image/jpeg' }
 //
 // Настройки (Settings → Variables and Secrets):
@@ -63,7 +64,8 @@ export default {
     body.append('prompt', prompt);
     body.append('input_fidelity', closeness >= 0.5 ? 'high' : 'low');
     body.append('quality', env.QUALITY || 'medium');
-    body.append('size', 'auto');
+    const size = ['1024x1024', '1536x1024', '1024x1536'].includes(f('size', 12)) ? f('size', 12) : 'auto';
+    body.append('size', size);
     body.append('output_format', 'jpeg');
     body.append('n', '1');
     body.append('user', 'maestro-' + (await hash(ip)).slice(0, 16));
@@ -72,7 +74,9 @@ export default {
     if (!r.ok) {
       const text = await r.text();
       console.log('openai error', r.status, text.slice(0, 500));
-      return json({ error: 'upstream', status: r.status }, r.status === 400 ? 400 : 502);
+      let code = '';
+      try { code = (JSON.parse(text).error || {}).code || ''; } catch {}
+      return json({ error: code === 'moderation_blocked' ? 'moderation' : 'upstream', status: r.status }, r.status === 400 ? 400 : 502);
     }
     const data = await r.json();
     const b64 = data && data.data && data.data[0] && data.data[0].b64_json;
