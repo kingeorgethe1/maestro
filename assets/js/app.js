@@ -200,7 +200,6 @@ function viewWork(id) {
       <div class="to-finish"><h3 class="h3">${t('work.toFinish')}</h3><p class="body18">${esc(L(w.toFinish))}</p></div>
       <div class="chips">${tags.map((x) => chip(x, false, '', 'span').replace('class="chip ', 'class="chip static ')).join('')}</div>
       <div class="actions">${btn(t('work.start'), 'solid', 'L', `data-go="#/draw/${w.id}"`)}${btn(t(fav ? 'work.saved' : 'work.save'), 'outline', 'S', 'id="fav"')}</div>
-      <label class="link muted upload">${t('work.upload')}<input type="file" accept="image/*" id="upload" hidden></label>
     </div>
   </main>`;
   bindGo();
@@ -208,10 +207,6 @@ function viewWork(id) {
   const favLabel = (on) => { $('#fav span').innerHTML = `<svg class="heart" viewBox="0 0 24 22" width="20" height="18"><path d="M12 20s-8.5-5.2-8.5-11.2A4.8 4.8 0 0112 6a4.8 4.8 0 018.5 2.8C20.5 14.8 12 20 12 20z" fill="${on ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2.8" stroke-linejoin="round"/></svg>${esc(t(on ? 'work.saved' : 'work.save'))}`; };
   favLabel(fav);
   $('#fav').onclick = () => favLabel(store.toggleFav(w.id));
-  $('#upload').onchange = async (e) => {
-    const file = e.target.files[0]; if (!file) return;
-    S.upload = await blobImage(file); location.hash = '#/draw/upload';
-  };
 }
 
 // ---------- редактор ----------
@@ -420,7 +415,6 @@ async function viewResult(savedId) {
   app.innerHTML = `${header('', { href: '#/draw/' + w.id, label: t('res.backCanvas'), attrs: 'id="back-canvas"' })}
   <main class="page result">
     <div class="res-head"><h1 class="res-title">${t('res.title')}</h1>
-      <p class="m16 muted res-name" title="${esc(L(w.title))}">${esc(L(w.title))}${L(w.artist) ? ' · ' + esc(L(w.artist)) : ''}</p>
       <label class="switch"><input type="checkbox" id="sketch" checked><i></i><span>${t('res.sketchToggle')}</span></label></div>
     <div class="compare" id="cmp" style="--pos:50%" data-rough="6 #fff none 32">
       <img class="after" src="${url(d.result)}" alt="${esc(t('res.after'))}">
@@ -429,7 +423,7 @@ async function viewResult(savedId) {
       <div class="handle"><span class="knob" data-rough="4 var(--ink) var(--paper) 24">‹ ›</span></div>
       <input type="range" min="0" max="100" value="50" step="0.1" aria-label="${esc(t('res.before'))} / ${esc(t('res.after'))}">
     </div>
-    <div class="res-bar actions">${btn(t('res.download'), 'solid', 'S', 'id="dl"')}${d.saved ? '' : btn(d.savedId ? t('res.savedBtn') : t('res.save'), 'outline', 'S', `id="save" ${d.savedId ? 'disabled' : ''}`)}</div>
+    <div class="res-bar actions">${btn(t('res.download'), 'solid', 'S', 'id="dl"')}${d.saved ? '' : btn(t('res.save'), 'outline', 'S', 'id="save"')}</div>
   </main>`;
   const cmp = $('#cmp'), range = $('#cmp input'), after = $('#cmp .after');
   range.oninput = () => cmp.style.setProperty('--pos', range.value + '%');
@@ -442,6 +436,8 @@ async function viewResult(savedId) {
     const availH = Math.max(260, innerHeight - cmp.getBoundingClientRect().top - $('.res-bar').offsetHeight - 56);
     const wpx = Math.min(availW, availH * ar);
     cmp.style.width = wpx + 'px'; cmp.style.height = wpx / ar + 'px';
+    $('.res-head').style.width = wpx + 'px'; // заголовок и тумблер — по краям кадра с картиной
+    roughen(main); // обводка кадра — под новый размер
   };
   after.complete ? fit() : after.addEventListener('load', fit); addEventListener('resize', fit);
   S.cleanup.push(() => removeEventListener('resize', fit));
@@ -449,9 +445,12 @@ async function viewResult(savedId) {
   $('#back-canvas').onclick = (e) => { if (d.layerFull && w.id !== 'upload') { e.preventDefault(); S.last = { ...(S.last || {}), work: w, continueLayer: d.layerFull }; location.hash = '#/draw/' + w.id; } };
   // сохранение сразу показываем как готовое, запись в базу идёт в фоне
   const save = $('#save');
+  // «сохранено» с жирной галочкой — той же толщины, что сердечко на карточке
+  const savedLabel = () => { save.disabled = true; save.classList.add('done'); save.querySelector('span').innerHTML = `<svg class="heart" viewBox="0 0 24 22" width="20" height="18"><path d="M4 11.5l5 5L20 5.5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>${esc(t('res.savedBtn'))}`; };
+  if (save && d.savedId) savedLabel();
   if (save && !d.savedId) save.onclick = async () => {
     const id = 'w' + Date.now();
-    save.disabled = true; save.classList.add('done'); save.querySelector('span').textContent = t('res.savedBtn'); toast(t('res.savedOk'));
+    savedLabel(); toast(t('res.savedOk'));
     d.savedId = id;
     try { await store.saveWork({ id, workId: w.id, created: Date.now(), result: d.result, composite: compositeBlob, painting: paintingBlob, layer: d.layerFull }); }
     catch (err) { console.error(err); d.savedId = null; save.disabled = false; save.classList.remove('done'); save.querySelector('span').textContent = t('res.save'); toast(t('ai.error')); }

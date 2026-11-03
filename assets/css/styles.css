@@ -116,19 +116,23 @@ svg.rough { position: absolute; z-index: -1; overflow: visible; pointer-events: 
 
 /* ---------- Карточка работы ---------- */
 /* всё помещается в один экран: высота картины зависит от высоты окна */
-.work { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 580px); gap: 64px; align-items: center; padding-top: 32px; padding-bottom: 32px; }
-.work-pic { padding: 8px 8px 8px 0; display: flex; justify-content: flex-start; }
-.work-pic .pic { width: 100%; max-width: 620px; max-height: calc(100vh - 160px); aspect-ratio: 620 / 467; --r: 44px; }
-.work-info { display: flex; flex-direction: column; gap: clamp(10px, calc((100vh - 640px) / 14), 18px); align-items: flex-start; }
+/* обе колонки по центру страницы и по ширине, и по высоте окна (под шапкой) */
+.work { display: grid; grid-template-columns: minmax(0, 620px) minmax(0, 580px); justify-content: center; align-items: center; column-gap: 72px;
+  min-height: calc(100vh - 86px); padding-top: 24px; padding-bottom: 24px; }
+.work-pic { padding: 8px; }
+.work-pic .pic { width: 100%; max-height: calc(100vh - 160px); aspect-ratio: 620 / 467; --r: 44px; }
+/* ритм справа: базовый шаг g; мета → описание 2g, описание → «что дорисовать» 1.5g, теги → кнопки 3g */
+.work-info { --g: clamp(8px, calc((100vh - 640px) / 18), 14px); display: flex; flex-direction: column; gap: var(--g); align-items: flex-start; }
+.work-info .meta + .body18 { margin-top: var(--g); }
+.work-info .to-finish { margin-top: calc(var(--g) * .5); }
+.work-info .actions { margin-top: calc(var(--g) * 2); }
 .work-title { font: 700 clamp(30px, calc(100vh / 24), 40px)/1.05 var(--body); }
 .meta { display: grid; grid-template-columns: 110px 1fr; gap: 6px 12px; margin: 0; font: 500 16px/normal var(--body); }
 .meta dt { color: var(--muted); } .meta dd { margin: 0; }
 .to-finish { display: flex; flex-direction: column; gap: 6px; }
 .work-info .chips { padding: 5px; margin: -5px; }
 .heart { flex: none; margin-right: 8px; vertical-align: -2px; }
-#fav span { display: inline-flex; align-items: center; }
-.work-info .actions { gap: 20px; padding-top: 6px; }
-.upload { cursor: pointer; }
+.work-info .actions { gap: 20px; }
 
 /* ---------- Редактор (кадр 1440×1024, поля 40) ---------- */
 .editor { max-width: 1440px; margin: 0 auto; padding: 28px 40px 40px; display: grid;
@@ -225,10 +229,10 @@ textarea:focus { outline: none; }
 
 /* ---------- Результат: картина почти на весь экран, ползунок «было / стало», тумблер наброска ---------- */
 .result { padding-top: 24px; padding-bottom: 24px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
-.res-head { align-self: stretch; display: flex; align-items: center; gap: 16px; }
-.res-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.res-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; max-width: 100%; }
+#save span, #fav span { display: inline-flex; align-items: center; }
 .res-head .switch { flex: none; font-size: 16px; }
-.res-title { font: 700 40px/normal var(--body); white-space: nowrap; flex: none; }
+.res-title { font: 700 32px/normal var(--body); white-space: nowrap; }
 .compare { position: relative; border-radius: 32px; box-shadow: var(--shadow); background: var(--placeholder); width: 100%; aspect-ratio: 4 / 3; }
 .compare > svg.rough { z-index: 4; }
 .compare img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; border-radius: inherit; }
@@ -269,7 +273,7 @@ textarea:focus { outline: none; }
 }
 @media (max-width: 1000px) {
   .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .work { grid-template-columns: 1fr; gap: 32px; }
+  .work { grid-template-columns: 1fr; gap: 32px; min-height: 0; }
   .editor { grid-template-columns: 1fr; grid-template-rows: auto; gap: 16px; padding: 16px; }
   .ed-top, .tools, .tip-row, .ed-host, .palette, .ai { grid-column: 1; grid-row: auto; }
   .tools { flex-direction: row; margin-top: 0; justify-self: start; padding: 10px 14px; }
