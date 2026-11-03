@@ -1,0 +1,16 @@
+# Для публикации через командную строку (необязательно — можно через панель Cloudflare, см. README).
+name = "maestro-api"
+main = "worker.js"
+compatibility_date = "2025-06-01"
+
+[vars]
+ALLOWED_ORIGINS = "https://ВАШ-ЛОГИН.github.io"
+MODEL = "gpt-image-1.5"
+QUALITY = "medium"
+LIMIT_PER_IP = "10"
+LIMIT_TOTAL = "200"
+
+# Создайте KV: npx wrangler kv namespace create LIMITS — и вставьте id сюда
+# [[kv_namespaces]]
+# binding = "LIMITS"
+# id = "..."
