@@ -23,7 +23,7 @@
 - 19 Franz Heinrich Corinth, the Artist’s Father: уже есть файл
 - 20 Mary Robinson: уже есть файл
 - 21 Norham Castle, Sunrise: уже есть файл
-- 22 Queen Victoria (study from life): [met] Queen Victoria — Thomas Sully — Public domain (Met Open Access) — https://www.metmuseum.org/art/collection/search/12702
+- 22 Queen Victoria (study from life): уже есть файл
 - 23 The Unfinished Wellington: уже есть файл
 - 24 Head of an Elderly Lady: уже есть файл
 - 25 Lady in White: уже есть файл
