@@ -9,6 +9,7 @@ import { createMaestro } from './hero.js';
 import { Editor, blobImage } from './editor.js';
 import { generate, isDemo, ApiError } from './api.js';
 import * as store from './store.js';
+import { roughen } from './rough.js';
 
 const app = document.getElementById('app');
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -32,19 +33,24 @@ function toast(msg) {
   let el = $('#toast'); if (!el) { el = h('<div id="toast" class="toast" role="status"></div>'); document.body.appendChild(el); }
   el.textContent = msg; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
 }
-const btn = (label, kind = 'outline', size = 'L', attrs = '') => `<button class="btn ${kind} ${size === 'S' ? 'small' : ''}" ${attrs}><span>${esc(label)}</span></button>`;
-const chip = (label, on, attrs = '') => `<button class="chip ${on ? 'on' : ''}" ${attrs}><span>${esc(label)}</span></button>`;
-function picture(src, alt, rot = 0, cls = '') {
-  return `<figure class="pic ${cls}" style="--rot:${rot}deg"><img src="${esc(src)}" alt="${esc(alt)}" loading="lazy" onerror="this.closest('.pic').classList.add('noimg')"><span class="pic-ph">${esc(alt)}</span></figure>`;
+// Кнопка и фильтр из «MAESTRO · компоненты»: рваная обводка 6/5 px (L/S) и 5 px снаружи у фильтров
+const btn = (label, kind = 'outline', size = 'L', attrs = '') =>
+  `<button class="btn ${kind} ${size === 'S' ? 'small' : ''}" data-rough="${size === 'S' ? 5 : 6} var(--ink) var(${kind === 'solid' ? '--ink' : '--paper'}) 30" ${attrs}><span>${esc(label)}</span></button>`;
+const chip = (label, on, attrs = '', tag = 'button') =>
+  `<${tag} class="chip ${on ? 'on' : ''}" data-rough="5 var(--ink) var(${on ? '--ink' : '--paper'}) 20 outside" ${attrs}><span>${esc(label)}</span></${tag}>`;
+// Картина: белая рваная рамка 6 px поверх края, скругление r, наклон rot
+function picture(src, alt, rot = 0, r = 32, extra = '') {
+  return `<figure class="pic" style="--rot:${rot}deg;--r:${r}px" data-rough="6 #fff none ${r}" data-seed="${esc(alt)}${rot}"><img src="${esc(src)}" alt="${esc(alt)}" loading="lazy" onerror="this.closest('.pic').classList.add('noimg')">${extra}<span class="pic-ph">${esc(alt)}</span></figure>`;
 }
-function header(active) {
-  return `<header class="top">
+const ui = (name) => `assets/img/ui/${name}.svg`;
+const langBtn = () => `<button class="lang" data-act="lang" aria-label="Language">${getLang() === 'ru' ? '<b>RU</b> / EN' : '<b>EN</b> / RU'}</button>`;
+// Шапка: logo · меню · login. back — ссылка «← …» вместо пункта «catalog» (карточка, результат)
+function header(active, back = null) {
+  const first = back ? `<a href="${back.href}" class="on" ${back.attrs || ''}>${esc(back.label)}</a>` : `<a href="#/catalog" class="${active === 'catalog' ? 'on' : ''}">${t('nav.catalog')}</a>`;
+  return `<header class="top ${active === 'catalog' ? 'wide' : ''}">
     <a class="logo" href="#/">maestro</a>
-    <nav><a href="#/catalog" class="${active === 'catalog' ? 'on' : ''}">${t('nav.catalog')}</a><a href="#/my" class="${active === 'my' ? 'on' : ''}">${t('nav.my')}</a></nav>
-    <div class="top-right">
-      <button class="lang" data-act="lang" aria-label="Language">${getLang() === 'ru' ? '<b>RU</b> / EN' : '<b>EN</b> / RU'}</button>
-      ${btn(t('nav.login'), 'outline', 'S', 'data-act="soon"')}
-    </div>
+    <nav>${first}<a href="#/my" class="${active === 'my' ? 'on' : ''}">${t('nav.my')}</a></nav>
+    <div class="top-right">${langBtn()}${btn(t('nav.login'), 'outline', 'S', 'data-act="soon"')}</div>
   </header>`;
 }
 document.addEventListener('click', (e) => {
@@ -55,8 +61,8 @@ document.addEventListener('click', (e) => {
 
 // ---------- главная ----------
 async function viewHome() {
-  app.innerHTML = `${header()}
-  <main class="hero">
+  app.innerHTML = `<main class="home">
+    <div class="top-right">${langBtn()}${btn(t('nav.login'), 'outline', 'S', 'data-act="soon"')}</div>
     <div class="hero-text">
       <h1>${t('hero.title')}</h1>
       <p class="lead">${t('hero.lead')}</p>
@@ -107,28 +113,30 @@ function viewCatalog() {
     group === 'technique' ? w.technique.includes(val) : w.period === val)).length;
   const row = (group, labelKey) => `<div class="frow"><span class="flabel">${t(labelKey)}</span><div class="chips">
       ${chip(t('f.all'), !f[group].size, `data-f="${group}" data-v="*"`)}
-      ${FILTERS[group].map((v) => { const n = count(group, v); return chip(`${t(group + '.' + v)}${f[group].has(v) ? '' : ` · ${n}`}`, f[group].has(v), `data-f="${group}" data-v="${v}" ${n || f[group].has(v) ? '' : 'disabled'}`); }).join('')}
+      ${FILTERS[group].map((v) => { const n = count(group, v); return chip(t(group + '.' + v), f[group].has(v), `data-f="${group}" data-v="${v}" ${n || f[group].has(v) ? '' : 'disabled'}`); }).join('')}
     </div></div>`;
   const uniq = (fn) => [...new Set(WORKS.map(fn))].sort();
   const select = (key, labelKey, values) => `<label class="sel"><span class="flabel">${t(labelKey)}</span><select data-s="${key}"><option value="">${t('f.any')}</option>
       ${values.map((v) => `<option value="${esc(v)}" ${f[key] === v ? 'selected' : ''}>${esc(key === 'artist' ? L(WORKS.find((w) => w.artist.en === v).artist) : L(WORKS.find((w) => w.movement.en === v).movement))}</option>`).join('')}</select></label>`;
   app.innerHTML = `${header('catalog')}
   <main class="page">
-    <h1 class="h1">${t('cat.title')}</h1><p class="lead narrow">${t('cat.lead')}</p>
+    <div class="intro"><h1 class="h1">${t('cat.title')}</h1><p class="lead">${t('cat.lead')}</p></div>
     <section class="filters">
-      ${row('category', 'f.category')}${row('finish', 'f.finish')}${row('percent', 'f.percent')}
+      ${row('category', 'f.category')}${row('finish', 'f.finish')}
       <div class="frow more-row"><button class="link" id="more" aria-expanded="${S.moreOpen}">${S.moreOpen ? t('f.less') + ' ▴' : t('f.more') + ' ▾'}</button>
-        <span class="muted">${t('f.count', list.length)}</span>
+        <span class="small muted">${t('f.moreHint')}</span>
+        <span class="small muted">· ${t('f.count', list.length)}</span>
         ${list.length !== WORKS.length ? `<button class="link" id="reset">${t('f.reset')}</button>` : ''}</div>
       <div class="more" ${S.moreOpen ? '' : 'hidden'}>${row('technique', 'f.technique')}${row('period', 'f.period')}
-        <div class="frow selects">${select('artist', 'f.artist', uniq((w) => w.artist.en))}${select('movement', 'f.movement', uniq((w) => w.movement.en))}</div></div>
+        <div class="frow selects">${select('artist', 'f.artist', uniq((w) => w.artist.en))}${select('movement', 'f.movement', uniq((w) => w.movement.en))}</div>
+        ${row('percent', 'f.percent')}</div>
     </section>
     ${list.length ? `<section class="grid">${list.map((w, i) => `
       <a class="card" href="#/work/${w.id}">
-        ${picture(imgSrc(w), L(w.title), [-1.6, 1.2, -0.8, 1.4, -1.2, 0.9][i % 6])}
-        <h3>${esc(L(w.title))}</h3>
-        <p class="muted">${esc(L(w.artist))}${w.date ? ' · ' + esc(w.date) : ''}</p>
-        <p class="small"><span class="muted">${t('card.finishShort')}</span> ${w.finish.map((x) => t('finish.' + x).toLowerCase()).join(', ')}</p>
+        <div class="frame">${picture(imgSrc(w), L(w.title), [1.6, -1.2, 0.8, -1.4, 1.2, -0.9][i % 6])}</div>
+        <h3 class="h3">${esc(L(w.title))}</h3>
+        <p class="m16 muted">${esc(L(w.artist))}${w.date ? ' · ' + esc(w.date) : ''}</p>
+        <p class="finish-line"><span class="muted">${t('card.finishShort')}</span>${w.finish.map((x) => `<span>${esc(t('finish.' + x).toLowerCase())}</span>`).join('')}</p>
       </a>`).join('')}</section>`
     : `<div class="empty"><p>${t('cat.empty')}</p>${btn(t('f.reset'), 'outline', 'S', 'id="reset2"')}</div>`}
   </main>`;
@@ -147,20 +155,19 @@ function viewCatalog() {
 function viewWork(id) {
   const w = byId(id); if (!w) { location.hash = '#/catalog'; return; }
   const fav = store.favs().includes(w.id);
-  const tags = [t('category.' + w.category), ...w.finish.map((x) => t('finish.' + x)), ...w.technique.map((x) => t('technique.' + x)), t('period.' + w.period), w.percent ? t('percent.' + w.percent) : null].filter(Boolean);
-  const rows = [['work.artist', L(w.artist)], ['work.date', w.date], ['work.technique', L(w.techniqueText)], ['work.museum', L(w.museum)], ['work.source', w.source]].filter(([, v]) => v);
-  app.innerHTML = `${header('catalog')}
+  const tags = [t('category.' + w.category), ...w.finish.map((x) => t('finish.' + x)), ...w.technique.map((x) => t('technique.' + x)), t('period.' + w.period), w.percent ? `${t('percent.' + w.percent)} ${t('work.unfinished')}` : null].filter(Boolean);
+  const rows = [['work.artist', L(w.artist)], ['work.date', w.date], ['work.technique', L(w.techniqueText)], ['work.museum', L(w.museum)]].filter(([, v]) => v);
+  app.innerHTML = `${header('catalog', { href: '#/catalog', label: '← ' + t('nav.catalog') })}
   <main class="page work">
-    <div class="work-pic">${picture(imgSrc(w), L(w.title), -1.6, 'big')}</div>
+    <div class="work-pic">${picture(imgSrc(w), L(w.title), 1.6, 44)}</div>
     <div class="work-info">
-      <a class="link" href="#/catalog">← ${t('nav.catalog')}</a>
       <h1 class="h1">${esc(L(w.title))}</h1>
       <dl class="meta">${rows.map(([k, v]) => `<dt>${t(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
-      <p>${esc(L(w.desc))}</p>
-      <h3 class="h3">${t('work.toFinish')}</h3><p>${esc(L(w.toFinish))}</p>
-      <div class="chips">${tags.map((x) => `<span class="chip static"><span>${esc(x)}</span></span>`).join('')}</div>
-      <div class="actions">${btn(t('work.start'), 'solid', 'L', `data-go="#/draw/${w.id}"`)}${btn(fav ? t('work.saved') : t('work.save'), 'outline', 'S', 'id="fav"')}
-        <label class="link upload">${t('work.upload')}<input type="file" accept="image/*" id="upload" hidden></label></div>
+      <p class="body18">${esc(L(w.desc))}</p>
+      <div class="to-finish"><h3 class="h3">${t('work.toFinish')}</h3><p class="body18">${esc(L(w.toFinish))}</p></div>
+      <div class="chips">${tags.map((x) => chip(x, false, '', 'span').replace('class="chip ', 'class="chip static ')).join('')}</div>
+      <div class="actions">${btn(t('work.start'), 'solid', 'L', `data-go="#/draw/${w.id}"`)}${btn(fav ? t('work.saved') : t('work.save'), 'outline', 'S', 'id="fav"')}</div>
+      <label class="link muted upload">${t('work.upload')}<input type="file" accept="image/*" id="upload" hidden></label>
     </div>
   </main>`;
   bindGo();
@@ -172,53 +179,45 @@ function viewWork(id) {
 }
 
 // ---------- редактор ----------
-const PALETTE = ['#655438', '#FEDA0C', '#3B2E1F', '#000000', '#FFFFFF', '#9B2C2C', '#2F5D8A', '#4E7A3A'];
-const ICON = {
-  pencil: '<path d="M5 23l1.5-5.5L18.5 5.5a2.8 2.8 0 014 4L10.5 21.5z M16 8l4 4"/>',
-  brush: '<path d="M23 4L12 15 M12 15c-3-1-6 1-6 4 0 2-1 3-2 4 4 0 9-1 9-5z"/>',
-  eraser: '<path d="M9 22l-4-4L16 7l7 7-8 8z M11 22h12 M10.5 12.5l7 7"/>',
-  line: '<path d="M6 22L22 6"/>',
-  fill: '<path d="M6 13l8-8 8 8-8 8z M22 18c0 2 1 3 1 4a1.5 1.5 0 01-3 0c0-1 1-2 2-4z"/>',
-  picker: '<path d="M17 6l5 5 M15 8l5 5-9 9H6v-5z"/>',
-};
-const svg = (p, s = 28) => `<svg width="${s}" height="${s}" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+// Палитра из макета редактора: коричневый, золотой, тёмно-коричневый, чёрный + свой цвет
+const PALETTE = [['#655438', 'brown'], ['#FEDA0C', 'gold'], ['#3B2E1F', 'dark-brown'], ['#000000', 'ink']];
+const TOOLS = ['pencil', 'brush', 'eraser', 'line', 'fill', 'picker'];
 
 async function viewDraw(id) {
   const w = id === 'upload' ? uploadWork() : byId(id);
   if (!w || (id === 'upload' && !S.upload)) { location.hash = '#/catalog'; return; }
   app.innerHTML = `<div class="editor">
     <header class="ed-top">
-      <a class="link" href="${id === 'upload' ? '#/catalog' : '#/work/' + w.id}">${t('ed.back')}</a>
-      <div class="ed-title"><b>${esc(L(w.title))}</b> <span class="muted">${esc(L(w.artist))}${w.date ? ' · ' + esc(w.date) : ''}</span></div>
+      <a class="link" href="#/catalog">← ${t('nav.catalog')}</a>
+      <div class="ed-title"><span class="h3">${esc(L(w.title))}</span><span class="m16 muted">${esc(L(w.artist))}${w.date ? ' · ' + esc(w.date) : ''}</span></div>
       <div class="ed-history">
-        <button class="icon" id="undo" title="${t('ed.undo')}">↶</button><button class="icon" id="redo" title="${t('ed.redo')}">↷</button>
-        <button class="icon" id="eye" title="${t('ed.toggle')}">👁</button>${btn(t('ed.clear'), 'outline', 'S', 'id="clear"')}
-        <button class="lang" data-act="lang">${getLang() === 'ru' ? '<b>RU</b> / EN' : '<b>EN</b> / RU'}</button>
+        <button class="icon" id="undo" title="${t('ed.undo')}" aria-label="${t('ed.undo')}"><img src="${ui('undo')}" alt=""></button>
+        <button class="icon" id="redo" title="${t('ed.redo')}" aria-label="${t('ed.redo')}"><img src="${ui('redo')}" alt=""></button>
+        <button class="icon" id="eye" title="${t('ed.toggle')}" aria-label="${t('ed.toggle')}"><img src="${ui('eye')}" alt=""></button>
+        ${btn(t('ed.clear'), 'outline', 'S', 'id="clear"')}
       </div>
     </header>
-    <aside class="tools rough-box">
-      ${Object.keys(ICON).map((k) => `<button class="tool ${k === 'pencil' ? 'on' : ''}" data-tool="${k}" title="${t('tool.' + k)}" aria-label="${t('tool.' + k)}">${svg(ICON[k])}</button>`).join('')}
-      <div class="sizes">${[0, 1, 2].map((i) => `<button class="size ${i === 1 ? 'on' : ''}" data-size="${i}" aria-label="size ${i + 1}"><i style="width:${[6, 10, 16][i]}px;height:${[6, 10, 16][i]}px"></i></button>`).join('')}</div>
+    <aside class="tools" data-rough="4 var(--ink) var(--paper) 28">
+      ${TOOLS.map((k) => `<button class="tool ${k === 'pencil' ? 'on' : ''}" data-tool="${k}" title="${t('tool.' + k)}" aria-label="${t('tool.' + k)}"><img src="${ui(k)}" alt=""></button>`).join('')}
+      <div class="sizes">${[[6, 22], [10, 16], [16, 22]].map(([d, hh], i) => `<button class="size ${i === 1 ? 'on' : ''}" style="height:${hh}px" data-size="${i}" aria-label="size ${i + 1}"><i style="width:${d}px;height:${d}px"></i></button>`).join('')}</div>
     </aside>
-    <section class="ed-center">
-      ${w.toFinish ? `<div class="tip" id="tip"><span><b>${t('ed.tip')}</b> ${esc(L(w.toFinish))}</span><button class="icon" id="tip-x" aria-label="close">✕</button></div>` : ''}
-      <div class="ed-host" id="host"><div class="gen-overlay" id="gen" hidden><div class="band"></div><div class="band b2"></div><div class="band b3"></div></div></div>
-      <div class="ed-bottom">
-        <div class="palette">${PALETTE.map((c, i) => `<button class="dot ${i === 2 ? 'on' : ''}" data-color="${c}" style="--c:${c}" aria-label="${c}"></button>`).join('')}
-          <label class="dot custom" title="custom"><input type="color" id="custom" value="#3B2E1F"></label>
-          <button class="link small" data-tool="picker">${t('ed.pick')}</button></div>
-        <div class="zoom"><button class="icon" id="zout">−</button><span id="zval">100%</span><button class="icon" id="zin">+</button><button class="link small" id="zfit">${t('ed.fit')}</button></div>
-      </div>
-    </section>
-    <aside class="ai rough-box">
+    ${w.toFinish ? `<div class="tip-row"><div class="tip" id="tip"><span>${t('ed.tip')} ${esc(L(w.toFinish))}</span><button class="icon" id="tip-x" aria-label="close">✕</button></div></div>` : ''}
+    <div class="ed-host" id="host"><div class="gen-overlay" id="gen" hidden><div class="band"></div><div class="band b2"></div><div class="band b3"></div></div>
+      <div class="zoom"><button class="icon" id="zout" aria-label="zoom out">−</button><span id="zval" title="${t('ed.fit')}">100%</span><button class="icon" id="zin" aria-label="zoom in">+</button></div></div>
+    <div class="palette">${PALETTE.map(([c, n]) => `<button class="dot" data-color="${c}" data-name="${n}" aria-label="${c}"><img src="${ui('dot-' + n)}" alt=""></button>`).join('')}
+      <label class="dot custom" title="custom"><img src="${ui('dot-rainbow')}" alt=""><input type="color" id="custom" value="#655438"></label>
+      <button class="pick" data-tool="picker"><img src="${ui('picker')}" alt="">${t('ed.pick')}</button></div>
+    <aside class="ai" data-rough="4 var(--ink) var(--paper) 28">
       <h2 class="h2">${t('ai.title')}</h2>
       <label class="switch"><input type="checkbox" id="style" checked><i></i><span>${t('ai.style')}</span></label>
       <p class="small muted">${t('ai.styleHint')}</p>
-      <label class="slider"><span>${t('ai.close')}</span><input type="range" id="close" min="0" max="100" value="70"><span class="ends"><span>${t('ai.free')}</span><span>${t('ai.closeEnd')}</span></span></label>
-      <label class="desc"><span>${t('ai.describe')}</span><textarea id="desc" maxlength="300" rows="4" placeholder="${esc(t('ai.placeholder'))}"></textarea></label>
+      <label class="slider"><span>${t('ai.close')}</span>
+        <span class="range" style="--v:70%"><span class="track"></span><span class="fill"></span><img class="knob" src="${ui('knob')}" alt=""><input type="range" id="close" min="0" max="100" value="70"></span>
+        <span class="ends"><span>${t('ai.free')}</span><span>${t('ai.closeEnd')}</span></span></label>
+      <label class="desc"><span>${t('ai.describe')}</span><span class="field" data-rough="3 var(--ink) var(--paper) 16"><textarea id="desc" maxlength="300" placeholder="${esc(t('ai.placeholder'))}"></textarea></span></label>
       <div class="grow"></div>
       ${btn(t('ai.go'), 'solid', 'L', 'id="go"')}
-      ${isDemo() ? `<p class="small muted">${t('ai.demo')}</p>` : ''}
+      ${isDemo() ? `<p class="demo-note">${t('ai.demo')}</p>` : ''}
     </aside>
   </div>`;
 
@@ -236,13 +235,19 @@ async function viewDraw(id) {
     },
   });
   $('#zval').textContent = Math.round(ed.zoom * 100) + '%';
-  host.appendChild($('#gen'));
+  host.appendChild($('#gen')); host.appendChild($('.zoom'));
+  ed.color = PALETTE[0][0];
   S.cleanup.push(() => ed.destroy());
   // черновик: продолжаем с того места, где остановились
   if (id !== 'upload') { const d = await store.getDraft(w.id).catch(() => null); if (d && d.layer) await ed.loadLayer(d.layer); }
   if (S.last && S.last.continueLayer && S.last.work.id === w.id) { await ed.loadLayer(S.last.continueLayer); S.last.continueLayer = null; }
 
-  const selectColor = (c) => app.querySelectorAll('.dot[data-color]').forEach((d) => d.classList.toggle('on', d.dataset.color.toLowerCase() === c.toLowerCase()));
+  // выбранный кружок крупнее (47.5 px), как в макете
+  const selectColor = (c) => app.querySelectorAll('.dot[data-color]').forEach((d) => {
+    const on = d.dataset.color.toLowerCase() === c.toLowerCase(); d.classList.toggle('on', on);
+    d.querySelector('img').src = ui('dot-' + d.dataset.name + (on && d.dataset.name === 'brown' ? '-on' : ''));
+  });
+  selectColor(ed.color);
   app.querySelectorAll('[data-tool]').forEach((b) => b.addEventListener('click', () => {
     ed.tool = b.dataset.tool; app.querySelectorAll('.tool').forEach((x) => x.classList.toggle('on', x.dataset.tool === ed.tool));
     if (ed.tool === 'fill') toast(t('soon.fill'));
@@ -253,7 +258,8 @@ async function viewDraw(id) {
   $('#undo').onclick = () => ed.undo(); $('#redo').onclick = () => ed.redo();
   $('#eye').onclick = () => { ed.showLayer = !ed.showLayer; $('#eye').classList.toggle('off', !ed.showLayer); ed.render(); };
   $('#clear').onclick = () => { if (confirm(t('ed.clearConfirm'))) ed.clear(); };
-  $('#zin').onclick = () => ed.zoomBy(1.25); $('#zout').onclick = () => ed.zoomBy(0.8); $('#zfit').onclick = () => ed.fit();
+  $('#zin').onclick = () => ed.zoomBy(1.25); $('#zout').onclick = () => ed.zoomBy(0.8); $('#zval').onclick = () => ed.fit();
+  const closeIn = $('#close'); closeIn.oninput = () => closeIn.parentElement.style.setProperty('--v', closeIn.value + '%');
   const tipX = $('#tip-x'); if (tipX) tipX.onclick = () => $('#tip').remove();
   const styleBox = $('#style'), goBtn = $('#go');
   const syncGo = () => { goBtn.querySelector('span').textContent = styleBox.checked ? t('ai.go') : t('ai.noStyle'); $('.slider').classList.toggle('dim', !styleBox.checked); };
@@ -323,26 +329,18 @@ async function viewResult(savedId) {
   const toBlob = (c) => new Promise((ok) => c.toBlob(ok, 'image/png'));
   const compositeBlob = d.compositeBlob || await toBlob(d.composite), paintingBlob = d.paintingBlob || await toBlob(d.painting);
   const w = d.work;
-  app.innerHTML = `${header()}
+  app.innerHTML = `${header('', { href: '#/draw/' + w.id, label: t('res.backCanvas'), attrs: 'id="back-canvas"' })}
   <main class="page result">
-    <a class="link" href="#/draw/${w.id}" id="back-canvas">${t('res.backCanvas')}</a>
-    <h1 class="h1">${t('res.title')}</h1>
-    <p class="lead muted">${esc(L(w.title))}${L(w.artist) ? ' · ' + esc(L(w.artist)) : ''} · ${t('res.by')}</p>
+    <div class="intro tight"><h1 class="h1">${t('res.title')}</h1>
+      <p class="lead muted">${esc(L(w.title))}${L(w.artist) ? ' · ' + esc(L(w.artist)) : ''} · ${t('res.by')}</p></div>
     <div class="three">
-      <div><div class="frame small-pic">${picture(url(paintingBlob), t('res.original'), -1.2)}</div><h3 class="h3">${t('res.original')}</h3></div>
-      <div><div class="frame small-pic">${picture(url(compositeBlob), t('res.sketch'), 1)}</div><h3 class="h3">${t('res.sketch')}</h3></div>
-      <div class="main-res"><div class="compare" id="cmp" style="--pos:50%">
-          <img src="${url(d.result)}" alt="${esc(t('res.result'))}"><div class="before"><img src="${url(compositeBlob)}" alt=""></div>
-          <input type="range" min="0" max="100" value="50" aria-label="${esc(t('res.compare'))}">
-          <div class="status-pill done static"><span>${t('ai.completed')}</span><svg viewBox="0 0 14 12" width="13" height="11"><path d="M1.5 6.5l3.6 3.5L12.5 2" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        </div><h3 class="h3">${t('res.result')} <span class="small muted">· ${t('res.compare')}</span></h3></div>
+      <div class="state"><div class="frame">${picture(url(paintingBlob), t('res.original'), 1.2, 24)}</div><h3 class="h3">${t('res.original')}</h3></div>
+      <div class="state"><div class="frame">${picture(url(compositeBlob), t('res.sketch'), -1, 24)}</div><h3 class="h3">${t('res.sketch')}</h3></div>
+      <div class="state big"><div class="frame">${picture(url(d.result), t('res.result'), 0.8, 36)}</div><h3 class="h3">${t('res.result')}</h3></div>
     </div>
-    <div class="actions">${btn(t('res.download'), 'solid', 'L', 'id="dl"')}${d.saved ? '' : btn(t('res.save'), 'outline', 'L', 'id="save"')}
-      ${S.last && !savedId && d.styled ? btn(t('res.again'), 'outline', 'S', 'id="again"') : ''}<button class="link" id="copy">${t('res.copy')}</button></div>
+    <div class="actions">${btn(t('res.download'), 'solid', 'L', 'id="dl"')}${d.saved ? '' : btn(t('res.save'), 'outline', 'L', 'id="save"')}</div>
   </main>`;
-  const cmp = $('#cmp input'); cmp.oninput = () => $('#cmp').style.setProperty('--pos', cmp.value + '%');
   $('#dl').onclick = () => { const a = document.createElement('a'); a.href = url(d.result); a.download = `maestro-${w.id}-${Date.now()}.png`; a.click(); };
-  $('#copy').onclick = async () => { try { await navigator.clipboard.writeText(location.origin + location.pathname + '#/work/' + w.id); } catch {} toast(t('res.copied')); };
   $('#back-canvas').onclick = (e) => { if (d.layerFull && w.id !== 'upload') { e.preventDefault(); S.last = { ...(S.last || {}), work: w, continueLayer: d.layerFull }; location.hash = '#/draw/' + w.id; } };
   const save = $('#save');
   if (save) save.onclick = async () => {
@@ -350,35 +348,35 @@ async function viewResult(savedId) {
     await store.saveWork({ id, workId: w.id, created: Date.now(), result: d.result, composite: compositeBlob, painting: paintingBlob, layer: d.layerFull });
     save.disabled = true; toast(t('res.savedOk'));
   };
-  const again = $('#again');
-  if (again) again.onclick = async () => {
-    again.disabled = true; toast(t('ai.generating') + '…');
-    try { d.result = await generate(d); S.last = d; viewResult(); } catch (e) { toast(t('ai.error')); again.disabled = false; }
-  };
 }
 
 // ---------- мои работы ----------
 async function viewMy() {
   const [works, drafts] = await Promise.all([store.listWorks().catch(() => []), store.listDrafts().catch(() => [])]);
   const url = (b) => URL.createObjectURL(b);
-  const fmt = (ms) => new Date(ms).toLocaleString(getLang() === 'ru' ? 'ru-RU' : 'en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  // «today, 14:32» / «yesterday, 21:10», дальше — дата
+  const fmt = (ms) => {
+    const loc = getLang() === 'ru' ? 'ru-RU' : 'en-GB', d = new Date(ms), day = (x) => new Date(x).setHours(0, 0, 0, 0);
+    const time = d.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' }), diff = Math.round((day(Date.now()) - day(ms)) / 864e5);
+    return diff === 0 ? `${t('my.today')}, ${time}` : diff === 1 ? `${t('my.yesterday')}, ${time}` : d.toLocaleString(loc, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  };
   const items = [
     ...works.map((s) => ({ kind: 'work', s, w: byId(s.workId) || uploadWork(), when: s.created, img: url(s.result) })),
     ...drafts.filter((d) => byId(d.workId)).map((d) => ({ kind: 'draft', s: d, w: byId(d.workId), when: d.updated, img: imgSrc(byId(d.workId)) })),
   ];
   app.innerHTML = `${header('my')}
-  <main class="page">
-    <h1 class="h1">${t('my.title')}</h1><p class="lead muted narrow">${t('my.lead')}</p>
+  <main class="page my">
+    <div class="intro tight"><h1 class="h1">${t('my.title')}</h1><p class="lead muted">${t('my.lead')}</p></div>
     ${items.length ? `<section class="grid">${items.map((it, i) => `
       <div class="card">
-        ${picture(it.img, L(it.w.title), [-1.4, 1.1, -0.7][i % 3])}
-        <h3>${esc(L(it.w.title))}</h3>
-        <p class="muted">${it.kind === 'draft' ? t('my.draft') + ' · ' : ''}${fmt(it.when)}</p>
+        <div class="frame">${picture(it.img, L(it.w.title), [1.4, -1.1, 0.7][i % 3], 30)}</div>
+        <h3 class="h3">${esc(L(it.w.title))}</h3>
+        <p class="m16 muted">${it.kind === 'draft' ? t('my.draft') : fmt(it.when)}</p>
         <p class="links">${it.kind === 'work'
           ? `<a class="link" href="#/result/${it.s.id}">${t('my.open')}</a><button class="link" data-dl="${it.s.id}">${t('my.download')}</button>${it.w.id !== 'upload' ? `<button class="link" data-cont="${it.s.id}">${t('my.continue')}</button>` : ''}<button class="link muted" data-del="${it.s.id}">${t('my.delete')}</button>`
           : `<a class="link" href="#/draw/${it.w.id}">${t('my.continue')}</a><button class="link muted" data-deldraft="${it.w.id}">${t('my.delete')}</button>`}</p>
       </div>`).join('')}</section>`
-    : `<div class="empty"><p>${t('my.empty')}</p>${btn(t('my.choose'), 'solid', 'L', 'data-go="#/catalog"')}</div>`}
+    : `<div class="empty"><p class="body18">${t('my.empty')}</p>${btn(t('my.choose'), 'solid', 'L', 'data-go="#/catalog"')}</div>`}
   </main>`;
   bindGo();
   app.querySelectorAll('[data-dl]').forEach((b) => b.onclick = async () => { const s = await store.getWork(b.dataset.dl); const a = document.createElement('a'); a.href = url(s.result); a.download = `maestro-${s.workId}.png`; a.click(); });
@@ -401,5 +399,8 @@ async function route() {
   if (page === 'my') return viewMy();
   location.hash = '#/';
 }
+// рваные обводки у всего, что появилось на странице
+new MutationObserver(() => roughen(app)).observe(app, { childList: true, subtree: true });
+document.fonts && document.fonts.ready.then(() => roughen(app));
 addEventListener('hashchange', route);
 route();

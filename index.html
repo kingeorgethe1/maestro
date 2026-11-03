@@ -13,10 +13,6 @@
 <script src="config.js"></script>
 </head>
 <body>
-<!-- «Рваная» обводка: тот же эффект, что динамическая кисть в Figma -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <filter id="rough"><feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="5"/></filter>
-</svg>
 <div id="app"></div>
 <noscript>MAESTRO needs JavaScript.</noscript>
 <script type="module" src="assets/js/app.js"></script>

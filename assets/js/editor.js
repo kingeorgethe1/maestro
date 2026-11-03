@@ -2,6 +2,8 @@
 // Вокруг картины — расширяемое поле (MARGIN), можно рисовать за пределами исходного кадра.
 // Координаты рисунка — в пикселях рабочего поля; вид (зум и сдвиг) влияет только на отображение.
 
+import { roughPath } from './rough.js';
+
 const MAX_SIDE = 1600;       // картину приводим к этому размеру по длинной стороне
 const MARGIN_K = 0.22;       // поле вокруг картины, доля от длинной стороны
 const HISTORY = 30;
@@ -52,11 +54,13 @@ export class Editor {
     const x = this.vx, d = this.dpr;
     x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, this.view.width, this.view.height);
     x.setTransform(d * this.zoom, 0, 0, d * this.zoom, d * this.ox, d * this.oy);
-    // расширяемое поле
-    x.fillStyle = '#F4F1EA'; x.fillRect(0, 0, this.W, this.H);
-    x.setLineDash([10 / this.zoom, 10 / this.zoom]); x.strokeStyle = 'rgba(0,0,0,.18)'; x.lineWidth = 1.5 / this.zoom; x.strokeRect(0, 0, this.W, this.H); x.setLineDash([]);
-    x.save(); x.shadowColor = 'rgba(0,0,0,.14)'; x.shadowBlur = 18 * this.zoom * d; x.shadowOffsetY = 6 * this.zoom * d;
+    // картина: скруглённые углы 32 px и белая рваная обводка 6 px, как в макете (поле вокруг — фон блока)
+    const z = this.zoom, R = 32 / z;
+    x.save(); x.beginPath(); x.roundRect(this.M, this.M, this.pw, this.ph, R); x.clip();
     x.drawImage(this.paint, 0, 0); x.restore();
+    if (!this.edge || this.edgeZoom !== z) { this.edge = new Path2D(roughPath(this.pw * z, this.ph * z, 32, 6, 7)); this.edgeZoom = z; }
+    x.save(); x.translate(this.M, this.M); x.scale(1 / z, 1 / z);
+    x.strokeStyle = '#fff'; x.lineWidth = 6; x.lineJoin = 'round'; x.stroke(this.edge); x.restore();
     if (this.showLayer) x.drawImage(this.user, 0, 0);
     if (this.preview) this.preview(x);
   }
