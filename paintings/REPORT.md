@@ -29,6 +29,6 @@
 - 25 Lady in White: уже есть файл
 - 26 Portrait of Lady Leigh: уже есть файл
 - 27 In the Studio (unfinished): уже есть файл
-- 28 Head of an Unknown Young Woman: уже есть файл
+- 28 Head of an Unknown Young Woman: [artuk] Bristol Museum & Art Gallery K1681 — уже есть файл
 - 29 Self-portrait: уже есть файл
 - 30 Reminiscences (unfinished): уже есть файл
