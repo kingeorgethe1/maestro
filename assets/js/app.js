@@ -159,8 +159,6 @@ function viewWork(id) {
       <p>${esc(L(w.desc))}</p>
       <h3 class="h3">${t('work.toFinish')}</h3><p>${esc(L(w.toFinish))}</p>
       <div class="chips">${tags.map((x) => `<span class="chip static"><span>${esc(x)}</span></span>`).join('')}</div>
-      ${w.rights !== 'open' ? `<p class="badge">⚠ ${t('rights.' + w.rights)}</p>` : ''}
-      ${w.check.length ? `<p class="small muted">${t('work.check')} ${esc(w.check.join(', '))}</p>` : ''}
       <div class="actions">${btn(t('work.start'), 'solid', 'L', `data-go="#/draw/${w.id}"`)}${btn(fav ? t('work.saved') : t('work.save'), 'outline', 'S', 'id="fav"')}
         <label class="link upload">${t('work.upload')}<input type="file" accept="image/*" id="upload" hidden></label></div>
     </div>
@@ -228,13 +226,16 @@ async function viewDraw(id) {
   if (!img) { toast('Image not found: paintings/' + w.id + '.jpg'); return; }
   const host = $('#host');
   let saveTimer;
-  const ed = new Editor(host, img, {
+  let ed = null; // onChange вызывается уже из конструктора (fit()), до присваивания
+  ed = new Editor(host, img, {
     onChange: (changed, what) => {
+      if (!ed) return;
       $('#zval').textContent = Math.round(ed.zoom * 100) + '%';
       if (what === 'color') { $('#custom').value = ed.color; selectColor(ed.color); }
       if (changed && id !== 'upload') { clearTimeout(saveTimer); saveTimer = setTimeout(async () => store.saveDraft({ workId: w.id, layer: await ed.layerBlob(), updated: Date.now() }), 1200); }
     },
   });
+  $('#zval').textContent = Math.round(ed.zoom * 100) + '%';
   host.appendChild($('#gen'));
   S.cleanup.push(() => ed.destroy());
   // черновик: продолжаем с того места, где остановились

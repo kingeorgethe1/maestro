@@ -1,7 +1,8 @@
 // Каталог MAESTRO — 30 работ из «MAESTRO — каталог 50 незавершённых произведений».
 // Поля повторяют карточку и фильтры из «MAESTRO_catalogue_done.pdf».
 // check: какие факты в PDF помечены «[нужно проверить]». rights: служебный статус прав на фото.
-// commons: поисковый запрос, по которому scripts/fetch-images.mjs ищет изображение на Wikimedia Commons.
+// commons: поисковый запрос (или массив запросов — пробуются по очереди), по которому scripts/fetch-images.mjs ищет изображение на Wikimedia Commons.
+// met: номер объекта Метрополитен-музея — если есть, картинка берётся оттуда (только public domain).
 // TODO: работы 31–50 добавятся сюда в том же формате.
 
 export const FILTERS = {
@@ -128,7 +129,7 @@ export const WORKS = [
       en: 'The painter’s younger daughter plays a theorbo, a large lute. The gallery calls it unfinished: it is looser and quicker than the companion portrait of her sister.' },
     toFinish: { ru: 'Платье и фон, написанные широкими эскизными мазками.', en: 'The dress and background, laid in with broad sketchy strokes.' },
     category: 'portrait', finish: ['clothing', 'background'], period: '1700_1800', percent: '50_75', movement: { ru: 'Британская портретная школа', en: 'British portrait school' },
-    rights: 'noncommercial', check: ['unfinished parts', 'percent', 'rights'], commons: 'Gainsborough Margaret Gainsborough playing a Theorbo' }),
+    rights: 'noncommercial', check: ['unfinished parts', 'percent', 'rights'], commons: ['Gainsborough Margaret Gainsborough playing a Theorbo', 'Gainsborough theorbo'] }),
   W({ id: '15', title: { ru: 'Этюд к портрету мадам Готро', en: 'Study of Mme Gautreau' },
     artist: { ru: 'Джон Сингер Сарджент', en: 'John Singer Sargent' }, date: 'около 1884', technique: ['oil'], techniqueText: { ru: 'Масло, холст', en: 'Oil on canvas' },
     museum: { ru: 'Тейт Британ, Лондон (N04102)', en: 'Tate Britain, London (N04102)' }, source: 'Art Fund; PubHist',
@@ -160,7 +161,7 @@ export const WORKS = [
       en: 'A young man against a stormy sky — most likely Francis Barber, born enslaved in Jamaica, who became heir to the writer Samuel Johnson. The face is detailed; figure and clothes are a few strokes.' },
     toFinish: { ru: 'Одежду и плечи, а также фигуру ниже лица.', en: 'The clothes and shoulders, and the figure below the face.' },
     category: 'portrait', finish: ['clothing', 'figure'], period: '1700_1800', percent: '25_50', movement: { ru: 'Британская портретная школа', en: 'British portrait school' },
-    rights: 'unknown', check: ['percent', 'rights'], commons: 'Reynolds Portrait of a Young Man Francis Barber Menil' }),
+    rights: 'unknown', check: ['percent', 'rights'], commons: ['Reynolds Portrait of a Young Man Francis Barber Menil', 'Reynolds Francis Barber'] }),
   W({ id: '19', title: { ru: 'Франц Генрих Коринт, отец художника', en: 'Franz Heinrich Corinth, the Artist’s Father' },
     artist: { ru: 'Ловис Коринт', en: 'Lovis Corinth' }, date: '1888', technique: ['oil'], techniqueText: { ru: 'Масло, холст, 121 × 101 см', en: 'Oil on canvas, 121 × 101 cm' },
     museum: { ru: 'Художественный музей Сент-Луиса, США', en: 'Saint Louis Art Museum, USA' }, source: 'Saint Louis Art Museum',
@@ -168,7 +169,7 @@ export const WORKS = [
       en: 'The painter’s gravely ill father, who died a year later. The precisely painted face contrasts with the sweeping strokes across the rest of the unfinished canvas.' },
     toFinish: { ru: 'Одежду, руки, кресло и фон.', en: 'The clothes, the hands, the armchair and the background.' },
     category: 'portrait', finish: ['clothing', 'figure', 'background'], period: '1800_1900', percent: '50_75', movement: { ru: 'Импрессионизм', en: 'Impressionism' },
-    rights: 'unknown', check: ['percent', 'rights'], commons: 'Lovis Corinth Franz Heinrich Corinth 1888' }),
+    rights: 'unknown', check: ['percent', 'rights'], commons: ['Corinth Artist’s Father 736-1991 Saint Louis Art Museum', 'Corinth Artist’s Father Saint Louis'] }),
   W({ id: '20', title: { ru: 'Мэри Робинсон', en: 'Mary Robinson' },
     artist: { ru: 'Джошуа Рейнолдс', en: 'Joshua Reynolds' }, date: 'около 1784', technique: ['oil'], techniqueText: { ru: 'Масло, холст', en: 'Oil on canvas' },
     museum: { ru: 'Йельский центр британского искусства, Нью-Хейвен (B1981.25.520)', en: 'Yale Center for British Art, New Haven (B1981.25.520)' }, source: 'Yale Center for British Art',
@@ -192,7 +193,7 @@ export const WORKS = [
       en: 'Sully painted this study in four sittings at Buckingham Palace in May 1838. The young queen’s head with its crown and her bare shoulders are done; the rest is preparation for a state portrait.' },
     toFinish: { ru: 'Платье, фигуру ниже плеч и фон.', en: 'The dress, the figure below the shoulders and the background.' },
     category: 'portrait', finish: ['clothing', 'figure', 'background'], period: '1800_1900', percent: '25_50', movement: { ru: 'Романтизм', en: 'Romanticism' },
-    rights: 'unknown', check: ['unfinished parts', 'percent', 'rights'], commons: 'Thomas Sully Queen Victoria 1838 Metropolitan Museum' }),
+    rights: 'unknown', check: ['unfinished parts', 'percent', 'rights'], met: 12702, commons: 'Thomas Sully Queen Victoria 1838 Metropolitan Museum' }),
   W({ id: '23', title: { ru: 'Неоконченный Веллингтон', en: 'The Unfinished Wellington' },
     artist: { ru: 'Томас Лоуренс', en: 'Thomas Lawrence' }, date: '1829', technique: ['oil'], techniqueText: { ru: 'Масло, холст, 96,5 × 76,2 см', en: 'Oil on canvas, 96.5 × 76.2 cm' },
     museum: { ru: 'Национальная портретная галерея, Лондон', en: 'National Portrait Gallery, London' }, source: 'Wikipedia',
@@ -208,7 +209,7 @@ export const WORKS = [
       en: 'An elderly woman, probably the writer Elizabeth Carter. The features are marked in black chalk, the head is fully painted in oil, and bare canvas surrounds it.' },
     toFinish: { ru: 'Плечи, одежду, чепец и фон.', en: 'The shoulders, the clothes, the cap and the background.' },
     category: 'portrait', finish: ['clothing', 'background'], period: '1800_1900', percent: '50_75', movement: { ru: 'Британская портретная школа', en: 'British portrait school' },
-    rights: 'noncommercial', check: ['date', 'period', 'attribution'], commons: 'Thomas Lawrence Head of an Elderly Lady Victoria and Albert' }),
+    rights: 'noncommercial', check: ['date', 'period', 'attribution'], commons: ['Thomas Lawrence Head of an Elderly Lady Victoria and Albert', 'Lawrence Elizabeth Carter'] }),
   W({ id: '25', title: { ru: 'Дама в белом', en: 'Lady in White' },
     artist: { ru: 'Густав Климт', en: 'Gustav Klimt' }, date: '1917/1918', technique: ['oil'], techniqueText: { ru: 'Масло, холст, 70 × 70 см', en: 'Oil on canvas, 70 × 70 cm' },
     museum: { ru: 'Бельведер, Вена (инв. 4286)', en: 'Belvedere, Vienna (inv. 4286)' }, source: 'Google Arts & Culture — Belvedere; ORF',
@@ -224,7 +225,7 @@ export const WORKS = [
       en: 'A typical Lawrence sketch: the head is fully painted in oil, while shoulders and pose are only chalked in on a dark ground. The museum does not know who the sitter is.' },
     toFinish: { ru: 'Плечи, платье и фон по наметкам мелом.', en: 'The shoulders, the dress and the background, following the chalk marks.' },
     category: 'portrait', finish: ['clothing', 'figure', 'background'], period: '1700_1800', percent: '50_75', movement: { ru: 'Британская портретная школа', en: 'British portrait school' },
-    rights: 'noncommercial', check: [], commons: 'Thomas Lawrence Lady Leigh Victoria and Albert' }),
+    rights: 'noncommercial', check: [], commons: ['Thomas Lawrence Lady Leigh Victoria and Albert', 'Thomas Lawrence Lady Leigh'] }),
   W({ id: '27', title: { ru: 'В студии (неоконченная)', en: 'In the Studio (unfinished)' },
     artist: { ru: 'Томас Икинс', en: 'Thomas Eakins' }, date: 'около 1884', technique: ['watercolor'], techniqueText: { ru: 'Акварель, бумага', en: 'Watercolour on paper' },
     museum: { ru: 'Филадельфийский музей искусств', en: 'Philadelphia Museum of Art' }, source: 'Philadelphia Museum of Art; Arthive',
@@ -240,7 +241,7 @@ export const WORKS = [
       en: 'An unfinished portrait of an unknown woman, the result of a single sitting. When Lawrence died suddenly in 1830, about 150 unfinished portraits remained in his studio.' },
     toFinish: { ru: 'Платье, плечи и фон.', en: 'The dress, the shoulders and the background.' },
     category: 'portrait', finish: ['clothing', 'background'], period: '1800_1900', percent: '50_75', movement: { ru: 'Британская портретная школа', en: 'British portrait school' },
-    rights: 'unknown', check: ['museum', 'percent', 'rights'], commons: 'Thomas Lawrence head of a young woman unfinished Bristol' }),
+    rights: 'unknown', check: ['museum', 'percent', 'rights'], commons: ['Thomas Lawrence head of a young woman unfinished Bristol', 'Thomas Lawrence unknown young woman'] }),
   W({ id: '29', title: { ru: 'Автопортрет', en: 'Self-portrait' },
     artist: { ru: 'Джордж Ромни', en: 'George Romney' }, date: '1784', technique: ['oil'], techniqueText: { ru: 'Масло, холст, 125,7 × 99,1 см', en: 'Oil on canvas, 125.7 × 99.1 cm' },
     museum: { ru: 'Национальная портретная галерея, Лондон (NPG 959)', en: 'National Portrait Gallery, London (NPG 959)' }, source: 'National Portrait Gallery',
@@ -256,5 +257,5 @@ export const WORKS = [
       en: 'A woman in an old-fashioned dress sits on a wooden chair, lost in memories. There is also an oil version of the subject, “Retrospection”.' },
     toFinish: { ru: 'Вероятно, платье, стул и фон.', en: 'Probably the dress, the chair and the background.' },
     category: 'figure', finish: ['clothing', 'background'], period: '1800_1900', percent: null, movement: { ru: 'Реализм', en: 'Realism' },
-    rights: 'unknown', check: ['museum', 'unfinished parts', 'percent'], commons: 'Thomas Eakins Reminiscences watercolor' }),
+    rights: 'unknown', check: ['museum', 'unfinished parts', 'percent'], commons: ['Thomas Eakins Reminiscences watercolor', 'Eakins Reminiscences'] }),
 ];

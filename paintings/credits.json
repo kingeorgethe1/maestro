@@ -42,10 +42,12 @@
     "credit": "This file was donated to Wikimedia Commons as part of a project by the National Gallery of Art. Please see the Gallery's Open Access Policy."
   },
   "19": {
-    "file": "File:Lovis Corinth Vater Franz Heinrich Corinth auf dem Krankenlager 1888.jpg",
-    "page": "https://commons.wikimedia.org/wiki/File:Lovis_Corinth_Vater_Franz_Heinrich_Corinth_auf_dem_Krankenlager_1888.jpg",
+    "source": "commons",
+    "query": "Corinth Artist’s Father 736-1991 Saint Louis Art Museum",
+    "file": "File:Lovis Corinth - Franz Heinrich Corinth, the Artist’s Father - 736-1991 - Saint Louis Art Museum.jpg",
+    "page": "https://commons.wikimedia.org/wiki/File:Lovis_Corinth_-_Franz_Heinrich_Corinth,_the_Artist%E2%80%99s_Father_-_736-1991_-_Saint_Louis_Art_Museum.jpg",
     "license": "Public domain",
-    "credit": "Zeno.org, ID number 20003949826"
+    "credit": "https://www.slam.org/collection/objects/17400/"
   },
   "20": {
     "file": "File:Sir Joshua Reynolds - Mrs. Robinson - Google Art Project.jpg",
@@ -60,10 +62,11 @@
     "credit": "Web Gallery of Art:   Image  Info about artworkwga QS:P11807,\"t/turner/2/206turne\"\nhttp://www.tate.org.uk/art/artworks/turner-norham-castle-sunrise-n01981"
   },
   "22": {
-    "file": "File:Queen Victoria by Thomas Sully in the Metropolitan Museum of Art.jpg",
-    "page": "https://commons.wikimedia.org/wiki/File:Queen_Victoria_by_Thomas_Sully_in_the_Metropolitan_Museum_of_Art.jpg",
-    "license": "Public domain",
-    "credit": "https://www.amazon.com/Victoria-1819-1901-Nqueen-England-1837-1901/dp/B07C4D327P"
+    "source": "met",
+    "file": "Queen Victoria — Thomas Sully",
+    "page": "https://www.metmuseum.org/art/collection/search/12702",
+    "license": "Public domain (Met Open Access)",
+    "credit": "Bequest of Francis T. S. Darley, 1914"
   },
   "23": {
     "file": "File:Wellington by Thomas Lawrence (1829).jpg",
@@ -76,6 +79,13 @@
     "page": "https://commons.wikimedia.org/wiki/File:Gustav_Klimt_-_Dame_in_Wei%C3%9F_-_4286_-_%C3%96sterreichische_Galerie_Belvedere.jpg",
     "license": "Public domain",
     "credit": "https://digital.belvedere.at/objects/3080/dame-in-wei"
+  },
+  "26": {
+    "source": "vam",
+    "file": "Portrait of Lady Lea (P.6-1963) — Sir Thomas Lawrence",
+    "page": "https://collections.vam.ac.uk/item/O131880/",
+    "license": "© Victoria and Albert Museum, London (non-commercial use)",
+    "credit": "Victoria and Albert Museum, London"
   },
   "27": {
     "file": "File:Eakins, In Studio (Unfinished) 1884.jpg",
