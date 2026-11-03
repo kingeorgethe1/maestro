@@ -87,6 +87,10 @@ svg.rough { position: absolute; z-index: -1; overflow: visible; pointer-events: 
 .hero-text h1 { font: 400 96px/normal var(--hand); }
 .hero-text .lead { width: 630px; margin-top: 24px; }
 .hero-text .actions { margin-top: 60px; gap: 32px; }
+/* русские подписи длиннее: кнопки остаются в одну строку и могут заходить в промежуток до картины */
+@media (min-width: 1200px) { .hero-text .actions { flex-wrap: nowrap; width: max-content; } }
+@media (min-width: 1200px) and (max-width: 1439px) { .hero-text .actions .btn { padding-inline: clamp(32px, calc((100vw - 1440px) * .14 + 64px), 64px); } .hero-text .actions { gap: 24px; } }
+@media (min-width: 961px) and (max-width: 1199px) { .hero-text .actions .btn { padding-inline: 36px; } .hero-text .actions { gap: 20px; } }
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; }
 .stage { position: absolute; left: 790px; top: 232px; width: 644px; aspect-ratio: 644 / 626; }
 .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
