@@ -10,7 +10,7 @@ QUALITY = "medium"
 LIMIT_PER_IP = "10"
 LIMIT_TOTAL = "200"
 
-# Создайте KV: npx wrangler kv namespace create LIMITS — и вставьте id сюда
-# [[kv_namespaces]]
-# binding = "LIMITS"
-# id = "..."
+# KV для дневных лимитов (создано: npx wrangler kv namespace create LIMITS)
+[[kv_namespaces]]
+binding = "LIMITS"
+id = "193df30c92cc439ebde172d91dfd13e5"

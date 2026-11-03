@@ -1,5 +1,5 @@
-// Настройки сайта. После публикации бэкенда на Cloudflare вставьте сюда его адрес,
-// например 'https://maestro-api.ваш-логин.workers.dev'. Пока строка пустая, генерация работает в демо-режиме.
+// Настройки сайта. apiUrl — адрес бэкенда на Cloudflare (worker/worker.js), он хранит ключ OpenAI в секрете.
+// Если строку сделать пустой, генерация переключится в демо-режим.
 window.MAESTRO_CONFIG = {
-  apiUrl: '',
+  apiUrl: 'https://maestro-api.maestro-art.workers.dev',
 };

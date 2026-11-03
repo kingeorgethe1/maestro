@@ -2,9 +2,10 @@
 
 Сайт, где можно выбрать незаконченную картину великого мастера, дорисовать её и попросить ИИ переписать рисунок в стиле художника.
 
-- **Сайт** — статический, живёт на GitHub Pages: `https://ВАШ-ЛОГИН.github.io/maestro/`.
+- **Сайт** — статический, живёт на GitHub Pages: `https://kingeorgethe1.github.io/maestro/`.
 - **Бэкенд** — Cloudflare Worker (папка `worker/`): хранит ключ OpenAI в секрете и вызывает генерацию.
-- Пока бэкенд не подключён, сайт работает в **демо-режиме**: весь путь проходится, результат имитируется в браузере.
+- **Подключено:** бэкенд `https://maestro-api.maestro-art.workers.dev` (модель gpt-image-1.5, качество medium, лимиты 10 генераций в сутки на адрес и 200 на сайт).
+- Если в `config.js` сделать `apiUrl` пустым, сайт перейдёт в **демо-режим**: весь путь проходится, результат имитируется в браузере.
 
 ## Что где лежит
 
@@ -38,6 +39,20 @@ worker/worker.js               бэкенд для Cloudflare
 1. platform.openai.com → **Billing**: пополните баланс и задайте месячный лимит расходов (**Limits**), чтобы не было сюрпризов.
 2. Для моделей gpt-image OpenAI может попросить подтвердить организацию (**Settings → Organization → Verify**).
 3. **API keys → Create new secret key**. Ключ никому не пересылайте — он понадобится только на шаге 3.
+
+## Обновить бэкенд из командной строки
+
+Настройки — в `worker/wrangler.toml` (адрес сайта, модель, качество, лимиты, KV `LIMITS`).
+
+```
+cd worker
+npx wrangler@4 login                       # один раз
+npx wrangler@4 deploy                      # опубликовать изменения worker.js / wrangler.toml
+npx wrangler@4 secret put OPENAI_API_KEY   # сменить ключ (вставить при запросе)
+npx wrangler@4 tail                        # смотреть логи запросов
+```
+
+Проверка: `https://maestro-api.maestro-art.workers.dev/health` → `{"ok":true,...,"limits":true}`.
 
 ## Шаг 3. Бэкенд на Cloudflare Workers (≈10 минут)
 
