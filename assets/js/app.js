@@ -119,7 +119,7 @@ function viewCatalog() {
   // выпадающий список в стиле фильтров: кнопка с рваной обводкой и всплывающий список
   const select = (key, labelKey, values) => {
     const name = (v) => (key === 'artist' ? L(WORKS.find((w) => w.artist.en === v).artist) : L(WORKS.find((w) => w.movement.en === v).movement));
-    return `<div class="sel"><span class="flabel">${t(labelKey)}</span><div class="dd" data-dd="${key}">
+    return `<div class="frow"><span class="flabel">${t(labelKey)}</span><div class="dd" data-dd="${key}">
       ${chip(`${f[key] ? name(f[key]) : t('f.any')} ▾`, !!f[key], 'aria-haspopup="listbox"')}
       <div class="dd-list" data-rough="4 var(--ink) var(--paper) 20" hidden><div class="dd-scroll" role="listbox">
         ${['', ...values.sort((a, b) => name(a).localeCompare(name(b)))].map((v) => `<button class="dd-opt ${f[key] === v ? 'on' : ''}" role="option" data-s="${key}" data-v="${esc(v)}">${esc(v ? name(v) : t('f.any'))}</button>`).join('')}
@@ -135,7 +135,7 @@ function viewCatalog() {
         <span class="small muted">· ${t('f.count', list.length)}</span>
         ${list.length !== WORKS.length ? `<button class="link" id="reset">${t('f.reset')}</button>` : ''}</div>
       <div class="more" ${S.moreOpen ? '' : 'hidden'}>${row('technique', 'f.technique')}${row('period', 'f.period')}
-        <div class="frow selects">${select('artist', 'f.artist', uniq((w) => w.artist.en))}${select('movement', 'f.movement', uniq((w) => w.movement.en))}</div>
+        ${select('artist', 'f.artist', uniq((w) => w.artist.en))}${select('movement', 'f.movement', uniq((w) => w.movement.en))}
         ${row('percent', 'f.percent')}</div>
     </section>
     ${list.length ? `<section class="grid">${list.map((w, i) => workCard(w, i)).join('')}</section>`
@@ -192,21 +192,22 @@ function viewWork(id) {
   const rows = [['work.artist', L(w.artist)], ['work.date', w.date], ['work.technique', L(w.techniqueText)], ['work.museum', L(w.museum)]].filter(([, v]) => v);
   app.innerHTML = `${header('catalog', { href: '#/catalog', label: '← ' + t('nav.catalog') })}
   <main class="page work">
-    <div class="work-left">
-      <div class="work-pic">${picture(imgSrc(w), L(w.title), 1.6, 44)}</div>
-      <div class="to-finish"><h3 class="h3">${t('work.toFinish')}</h3><p class="body18">${esc(L(w.toFinish))}</p></div>
-      <div class="chips">${tags.map((x) => chip(x, false, '', 'span').replace('class="chip ', 'class="chip static ')).join('')}</div>
-    </div>
+    <div class="work-pic">${picture(imgSrc(w), L(w.title), 1.6, 44)}</div>
     <div class="work-info">
       <h1 class="work-title">${esc(L(w.title))}</h1>
       <dl class="meta">${rows.map(([k, v]) => `<dt>${t(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
       <p class="body18">${esc(L(w.desc))}</p>
-      <div class="actions">${btn(t('work.start'), 'solid', 'L', `data-go="#/draw/${w.id}"`)}${btn(fav ? t('work.saved') : t('work.save'), 'outline', 'S', 'id="fav"')}</div>
+      <div class="to-finish"><h3 class="h3">${t('work.toFinish')}</h3><p class="body18">${esc(L(w.toFinish))}</p></div>
+      <div class="chips">${tags.map((x) => chip(x, false, '', 'span').replace('class="chip ', 'class="chip static ')).join('')}</div>
+      <div class="actions">${btn(t('work.start'), 'solid', 'L', `data-go="#/draw/${w.id}"`)}${btn(t(fav ? 'work.saved' : 'work.save'), 'outline', 'S', 'id="fav"')}</div>
       <label class="link muted upload">${t('work.upload')}<input type="file" accept="image/*" id="upload" hidden></label>
     </div>
   </main>`;
   bindGo();
-  $('#fav').onclick = () => { const on = store.toggleFav(w.id); $('#fav span').textContent = on ? t('work.saved') : t('work.save'); };
+  // сердечко — SVG с толстой линией (символ ♡ слишком тонкий); в избранном — закрашено
+  const favLabel = (on) => { $('#fav span').innerHTML = `<svg class="heart" viewBox="0 0 24 22" width="20" height="18"><path d="M12 20s-8.5-5.2-8.5-11.2A4.8 4.8 0 0112 6a4.8 4.8 0 018.5 2.8C20.5 14.8 12 20 12 20z" fill="${on ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2.8" stroke-linejoin="round"/></svg>${esc(t(on ? 'work.saved' : 'work.save'))}`; };
+  favLabel(fav);
+  $('#fav').onclick = () => favLabel(store.toggleFav(w.id));
   $('#upload').onchange = async (e) => {
     const file = e.target.files[0]; if (!file) return;
     S.upload = await blobImage(file); location.hash = '#/draw/upload';
@@ -252,7 +253,7 @@ async function viewDraw(id) {
       <label class="switch"><input type="checkbox" id="style" checked><i></i><span>${t('ai.style')}</span></label>
       <p class="small muted">${t('ai.styleHint')}</p>
       <label class="slider"><span>${t('ai.close')}</span>
-        <span class="range" style="--v:70%"><span class="track"></span><span class="fill"></span><img class="knob" src="${ui('knob')}" alt=""><input type="range" id="close" min="0" max="100" value="70"></span>
+        <span class="range" style="--v:70%"><span class="track"></span><span class="fill"></span><span class="knob"></span><input type="range" id="close" min="0" max="100" value="70"></span>
         <span class="ends"><span>${t('ai.free')}</span><span>${t('ai.closeEnd')}</span></span></label>
       <label class="desc"><span>${t('ai.describe')}</span><span class="field" data-rough="3 var(--ink) var(--paper) 16"><textarea id="desc" maxlength="300" placeholder="${esc(t('ai.placeholder'))}"></textarea></span></label>
       <div class="grow"></div>
@@ -295,9 +296,9 @@ async function viewDraw(id) {
     ed.tool = k; app.querySelectorAll('.tool').forEach((x) => x.classList.toggle('on', x.dataset.tool === k));
     $('.pick').classList.toggle('on', k === 'picker');
   };
-  // выбранный цвет: в перо (если был ластик или пипетка), в «часто используемые»
+  // выбранный цвет: в перо (если был ластик или пипетка)
   const applyColor = (c) => {
-    ed.color = c; selectColor(c); rememberColor(c); drawSwatches();
+    ed.color = c; selectColor(c); drawSwatches();
     if (ed.tool === 'eraser' || ed.tool === 'picker') setTool('pencil');
   };
 
@@ -321,7 +322,7 @@ async function viewDraw(id) {
   spec.onpointermove = (e) => { if (specDown) pickSpec(e); };
   spec.onpointerup = () => { specDown = false; };
   function drawSwatches() {
-    $('#swatches').innerHTML = recentColors().map((c) => `<button class="swatch ${c.toLowerCase() === ed.color.toLowerCase() ? 'on' : ''}" data-c="${c}" style="background:${c}" aria-label="${c}"></button>`).join('');
+    $('#swatches').innerHTML = BASIC_COLORS.map((c) => `<button class="swatch ${c.toLowerCase() === ed.color.toLowerCase() ? 'on' : ''}" data-c="${c}" style="background:${c}" aria-label="${c}"></button>`).join('');
   }
   $('#swatches').onclick = (e) => { const b = e.target.closest('[data-c]'); if (b) { $('#cpop-now').style.background = b.dataset.c; applyColor(b.dataset.c); } };
   $('#more-colors').onclick = (e) => {
@@ -368,18 +369,8 @@ async function viewDraw(id) {
     } finally { goBtn.disabled = false; }
   };
 }
-// часто используемые цвета: последние выбранные + запасной набор
-const BASE_COLORS = ['#FFFFFF', '#F4E3C3', '#C9A27E', '#8A8A8A', '#9B2C2C', '#C8553D', '#E9C46A', '#4E7A3A', '#2F5D8A', '#7A5C99'];
-function recentColors() {
-  let r = []; try { r = JSON.parse(localStorage.getItem('maestro.colors') || '[]'); } catch {}
-  return [...new Set([...r, ...BASE_COLORS].map((c) => c.toUpperCase()))].slice(0, 12);
-}
-function rememberColor(c) {
-  if (PALETTE.some(([p]) => p.toLowerCase() === c.toLowerCase())) return;
-  let r = []; try { r = JSON.parse(localStorage.getItem('maestro.colors') || '[]'); } catch {}
-  r = [c.toUpperCase(), ...r.filter((x) => x.toUpperCase() !== c.toUpperCase())].slice(0, 8);
-  try { localStorage.setItem('maestro.colors', JSON.stringify(r)); } catch {}
-}
+// основные цвета под большим квадратом палитры — всегда один и тот же набор
+const BASIC_COLORS = ['#FFFFFF', '#BDBDBD', '#6B6B6B', '#000000', '#E53935', '#FB8C00', '#FEDA0C', '#43A047', '#1E88E5', '#3949AB', '#8E24AA', '#6D4C41'];
 function uploadWork() {
   return { id: 'upload', title: { en: 'My image', ru: 'Моё изображение' }, artist: { en: '', ru: '' }, date: '', techniqueText: { en: 'unknown', ru: '' }, movement: { en: '', ru: '' }, finish: [], toFinish: null, upload: true };
 }
@@ -429,7 +420,8 @@ async function viewResult(savedId) {
   app.innerHTML = `${header('', { href: '#/draw/' + w.id, label: t('res.backCanvas'), attrs: 'id="back-canvas"' })}
   <main class="page result">
     <div class="res-head"><h1 class="res-title">${t('res.title')}</h1>
-      <p class="m16 muted">${esc(L(w.title))}${L(w.artist) ? ' · ' + esc(L(w.artist)) : ''} · ${t('res.by')}</p></div>
+      <p class="m16 muted res-name" title="${esc(L(w.title))}">${esc(L(w.title))}${L(w.artist) ? ' · ' + esc(L(w.artist)) : ''}</p>
+      <label class="switch"><input type="checkbox" id="sketch" checked><i></i><span>${t('res.sketchToggle')}</span></label></div>
     <div class="compare" id="cmp" style="--pos:50%" data-rough="6 #fff none 32">
       <img class="after" src="${url(d.result)}" alt="${esc(t('res.after'))}">
       <div class="before"><img src="${url(paintingBlob)}" alt="${esc(t('res.before'))}"><img class="sketch" src="${url(compositeBlob)}" alt=""></div>
@@ -437,10 +429,7 @@ async function viewResult(savedId) {
       <div class="handle"><span class="knob" data-rough="4 var(--ink) var(--paper) 24">‹ ›</span></div>
       <input type="range" min="0" max="100" value="50" step="0.1" aria-label="${esc(t('res.before'))} / ${esc(t('res.after'))}">
     </div>
-    <div class="res-bar">
-      <label class="switch"><input type="checkbox" id="sketch" checked><i></i><span>${t('res.sketchToggle')}</span></label>
-      <div class="actions">${btn(t('res.download'), 'solid', 'L', 'id="dl"')}${d.saved ? '' : btn(d.savedId ? t('res.savedBtn') : t('res.save'), 'outline', 'L', `id="save" ${d.savedId ? 'disabled' : ''}`)}</div>
-    </div>
+    <div class="res-bar actions">${btn(t('res.download'), 'solid', 'S', 'id="dl"')}${d.saved ? '' : btn(d.savedId ? t('res.savedBtn') : t('res.save'), 'outline', 'S', `id="save" ${d.savedId ? 'disabled' : ''}`)}</div>
   </main>`;
   const cmp = $('#cmp'), range = $('#cmp input'), after = $('#cmp .after');
   range.oninput = () => cmp.style.setProperty('--pos', range.value + '%');

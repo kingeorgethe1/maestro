@@ -41,25 +41,16 @@ export async function generate(o) {
   return new Blob([bytes], { type: j.mime || 'image/png' });
 }
 
-// Демо: рисунок пользователя «впитывает» палитру картины — тонировка, мягкое размытие, лёгкая фактура.
+// Демо (ИИ не подключён): только имитация «стало» — картина, слегка переписанная фильтром.
+// Линии наброска сюда не переносим: на стороне «стало» должна быть только генерация.
 async function mock(o) {
   await new Promise((r) => setTimeout(r, 2600));
-  const { width: w, height: h } = o.composite;
+  const { width: w, height: h } = o.painting;
   const c = document.createElement('canvas'); c.width = w; c.height = h;
   const x = c.getContext('2d');
+  x.filter = 'saturate(1.12) contrast(1.06) sepia(0.12)';
   x.drawImage(o.painting, 0, 0);
-  const tone = document.createElement('canvas'); tone.width = w; tone.height = h;
-  const tx = tone.getContext('2d');
-  tx.filter = 'blur(1.6px) sepia(0.55) saturate(0.8) contrast(1.05)';
-  tx.drawImage(o.layer, 0, 0);
-  tx.filter = 'none';
-  // средний цвет картины как «палитра мастера»
-  const s = document.createElement('canvas'); s.width = s.height = 1;
-  const sx = s.getContext('2d'); sx.drawImage(o.painting, 0, 0, 1, 1);
-  const [r, g, b] = sx.getImageData(0, 0, 1, 1).data;
-  tx.globalCompositeOperation = 'source-atop';
-  tx.fillStyle = `rgba(${r},${g},${b},0.35)`; tx.fillRect(0, 0, w, h);
-  for (let i = 0; i < 2500; i++) { tx.fillStyle = `rgba(0,0,0,${Math.random() * 0.06})`; tx.fillRect(Math.random() * w, Math.random() * h, 2, 2); }
-  x.drawImage(tone, 0, 0);
+  x.filter = 'none';
+  for (let i = 0; i < 2500; i++) { x.fillStyle = `rgba(0,0,0,${Math.random() * 0.05})`; x.fillRect(Math.random() * w, Math.random() * h, 2, 2); }
   return toBlob(c, 'image/png');
 }

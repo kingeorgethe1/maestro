@@ -53,7 +53,8 @@ svg.rough { position: absolute; z-index: -1; overflow: visible; pointer-events: 
 .chip.on { color: var(--paper); }
 .chip:disabled { opacity: .35; cursor: default; }
 .chip.static { cursor: default; }
-.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+/* обводка фильтров 5 px снаружи + волна ≈1.5 px: чтобы между ними было видно 8 px, зазор 21 px */
+.chips { display: flex; flex-wrap: wrap; gap: 21px; }
 
 /* Картина: белая рваная рамка 6 px поверх края, скругление, тень, наклон */
 .pic { position: relative; margin: 0; transform: rotate(var(--rot, 0deg)); border-radius: var(--r, 32px); background: var(--placeholder); box-shadow: var(--shadow); }
@@ -98,9 +99,6 @@ svg.rough { position: absolute; z-index: -1; overflow: visible; pointer-events: 
 .flabel { font: 700 16px/normal var(--body); width: 170px; flex: none; }
 .more-row { gap: 24px; white-space: nowrap; }
 .more { display: flex; flex-direction: column; gap: 20px; }
-.selects { gap: 32px; }
-.sel { display: flex; align-items: center; gap: 16px; }
-.sel .flabel { width: auto; }
 .dd { position: relative; }
 .dd-list { position: absolute; z-index: 5; top: calc(100% + 14px); left: -5px; min-width: calc(100% + 10px); padding: 10px; }
 .dd-scroll { max-height: 320px; overflow: auto; display: flex; flex-direction: column; }
@@ -118,16 +116,17 @@ svg.rough { position: absolute; z-index: -1; overflow: visible; pointer-events: 
 
 /* ---------- Карточка работы ---------- */
 /* всё помещается в один экран: высота картины зависит от высоты окна */
-.work { display: grid; grid-template-columns: auto minmax(0, 580px); justify-content: space-between; gap: 64px; align-items: start; padding-top: 40px; padding-bottom: 40px; }
-.work-left { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.work-pic { padding: 8px 8px 8px 0; }
-.work-pic .pic { height: clamp(240px, calc(100vh - 400px), 467px); aspect-ratio: 620 / 467; max-width: 100%; --r: 44px; }
-.work-info { display: flex; flex-direction: column; gap: 18px; align-items: flex-start; padding-top: 8px; }
-.work-title { font: 700 40px/1.05 var(--body); }
-.meta { display: grid; grid-template-columns: 110px 1fr; gap: 8px 12px; margin: 0; font: 500 16px/normal var(--body); }
+.work { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 580px); gap: 64px; align-items: center; padding-top: 32px; padding-bottom: 32px; }
+.work-pic { padding: 8px 8px 8px 0; display: flex; justify-content: flex-start; }
+.work-pic .pic { width: 100%; max-width: 620px; max-height: calc(100vh - 160px); aspect-ratio: 620 / 467; --r: 44px; }
+.work-info { display: flex; flex-direction: column; gap: clamp(10px, calc((100vh - 640px) / 14), 18px); align-items: flex-start; }
+.work-title { font: 700 clamp(30px, calc(100vh / 24), 40px)/1.05 var(--body); }
+.meta { display: grid; grid-template-columns: 110px 1fr; gap: 6px 12px; margin: 0; font: 500 16px/normal var(--body); }
 .meta dt { color: var(--muted); } .meta dd { margin: 0; }
-.to-finish { display: flex; flex-direction: column; gap: 6px; max-width: 620px; }
-.work-left .chips { max-width: 630px; padding: 5px; margin: -5px; }
+.to-finish { display: flex; flex-direction: column; gap: 6px; }
+.work-info .chips { padding: 5px; margin: -5px; }
+.heart { flex: none; margin-right: 8px; vertical-align: -2px; }
+#fav span { display: inline-flex; align-items: center; }
 .work-info .actions { gap: 20px; padding-top: 6px; }
 .upload { cursor: pointer; }
 
@@ -191,7 +190,7 @@ svg.rough { position: absolute; z-index: -1; overflow: visible; pointer-events: 
 .range input { position: absolute; inset: 0; width: 100%; margin: 0; opacity: 0; cursor: pointer; }
 .range .track { position: absolute; left: 0; right: 0; top: 7px; height: 6px; border-radius: 3px; background: var(--line); pointer-events: none; }
 .range .fill { position: absolute; left: 0; top: 7px; height: 6px; border-radius: 3px; background: var(--ink); width: var(--v); pointer-events: none; }
-.range .knob { position: absolute; top: 0; left: calc(var(--v) - 10px); width: 20px; height: 20px; pointer-events: none; }
+.range .knob { position: absolute; top: 0; left: calc(var(--v) - 10px); width: 20px; height: 20px; border-radius: 50%; background: var(--gold); box-shadow: inset 0 0 0 3px var(--ink); pointer-events: none; }
 .slider .ends { display: flex; justify-content: space-between; font: 400 14px/normal var(--body); color: var(--muted); }
 .desc { display: flex; flex-direction: column; gap: 8px; font: 500 16px/normal var(--body); }
 .field { height: clamp(64px, calc(100vh - 860px + 90px), 110px); flex: none; }
@@ -209,7 +208,7 @@ textarea:focus { outline: none; }
 .gen-overlay .b2, .gen-overlay .b3 { display: none; }
 .gen-overlay.stop { opacity: 0; }
 @keyframes sweep { 0% { left: -30%; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { left: 115%; opacity: 0; } }
-.status-pill { position: absolute; z-index: 3; left: 50%; bottom: 8%; transform: translateX(-50%) rotate(4.13deg); display: inline-flex; align-items: center; gap: 0; padding: 4px 8px; border-radius: 7px; background: rgba(0,0,0,.25); color: #fff; font: 700 16px/normal var(--body); white-space: nowrap; animation: pillIn .35s ease both; }
+.status-pill { position: absolute; z-index: 3; left: 50%; bottom: 8%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 0; padding: 4px 8px; border-radius: 7px; background: rgba(0,0,0,.25); color: #fff; font: 700 16px/normal var(--body); white-space: nowrap; animation: pillIn .35s ease both; }
 .status-pill.out { animation: pillOut .3s ease both; }
 .status-pill i { font-style: normal; animation: dot 1.26s steps(1) infinite; }
 .status-pill i:nth-of-type(2) { animation-name: dot2; } .status-pill i:nth-of-type(3) { animation-name: dot3; }
@@ -226,8 +225,10 @@ textarea:focus { outline: none; }
 
 /* ---------- Результат: картина почти на весь экран, ползунок «было / стало», тумблер наброска ---------- */
 .result { padding-top: 24px; padding-bottom: 24px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
-.res-head { align-self: stretch; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
-.res-title { font: 700 40px/normal var(--body); }
+.res-head { align-self: stretch; display: flex; align-items: center; gap: 16px; }
+.res-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.res-head .switch { flex: none; font-size: 16px; }
+.res-title { font: 700 40px/normal var(--body); white-space: nowrap; flex: none; }
 .compare { position: relative; border-radius: 32px; box-shadow: var(--shadow); background: var(--placeholder); width: 100%; aspect-ratio: 4 / 3; }
 .compare > svg.rough { z-index: 4; }
 .compare img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; border-radius: inherit; }
@@ -239,8 +240,7 @@ textarea:focus { outline: none; }
 .compare .tag { position: absolute; z-index: 3; top: 18px; padding: 4px 10px; border-radius: 7px; background: rgba(0, 0, 0, .35); color: #fff; font: 700 16px/normal var(--body); pointer-events: none; }
 .compare .tag-l { left: 22px; } .compare .tag-r { right: 22px; }
 .compare input { position: absolute; z-index: 5; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: ew-resize; }
-.res-bar { align-self: stretch; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
-.res-bar .actions { gap: 20px; }
+.res-bar { justify-content: center; gap: 20px; }
 .btn.done, .btn.done:disabled { opacity: 1; cursor: default; }
 
 /* ---------- Мои работы ---------- */
@@ -279,6 +279,7 @@ textarea:focus { outline: none; }
   .ed-title { justify-content: flex-start; }
   .ed-top { flex-wrap: wrap; } .ed-title { order: 3; flex-basis: 100%; max-width: 100%; overflow: hidden; } .ed-title .muted { display: none; }
   .ed-history { margin-left: auto; }
+  .res-head { flex-wrap: wrap; } .res-title { font-size: 30px; }
   .tools { flex-wrap: wrap; width: 100%; justify-self: stretch; }
   .size { width: 30px; }
 }
